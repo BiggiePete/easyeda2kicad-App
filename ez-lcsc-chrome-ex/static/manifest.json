@@ -1,0 +1,33 @@
+{
+  "name": "EZ LCSC2KiCAD Extension",
+  "description": "A browser extension, that when used with the local desktop connector, automatically installs LCSC parts",
+  "version": "1.0.0",
+  "manifest_version": 3,
+  "action": {
+    "default_title": "EZ LCSC2KiCAD",
+    "default_icon": "favicon.png",
+    "default_popup": "index.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.lcsc.com/*"
+      ],
+      "js": [
+        "content.js"
+      ]
+    }
+  ],
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://localhost:3030/*",
+    "*://*.lcsc.com/*"
+  ]
+}
