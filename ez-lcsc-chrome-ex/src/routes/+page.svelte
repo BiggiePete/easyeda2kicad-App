@@ -30,5 +30,3 @@
 		</Card.Footer>
 	</Card.Root>
 </div>
-
-<button class="bg-slate-900">this is a test</button>
