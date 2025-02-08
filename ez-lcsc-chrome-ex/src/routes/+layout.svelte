@@ -6,8 +6,8 @@
 </script>
 
 <ModeWatcher></ModeWatcher>
-<div class="w-96">
-	<div class="w-full">
+<div class="h-[30rem] w-96">
+	<div class="grid w-full grid-cols-2">
 		<span>Thing</span>
 		<div class="flex flex-row-reverse">
 			<LightSwitch></LightSwitch>
