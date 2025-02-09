@@ -1,19 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import * as Card from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
-
-	onMount(getProjectList);
-
-	async function getProjectList() {
-		const r = await fetch('http://localhost:3030/api/getProjectList', {
-			method: 'GET',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			mode: 'cors' // Ensure the request respects CORS
-		});
-	}
+	import { onMount } from 'svelte';
 </script>
 
 <div class="container m-auto w-full">
@@ -23,10 +11,8 @@
 			<Card.Description>Card Description</Card.Description>
 		</Card.Header>
 		<Card.Content>
-			<Button onclick={getProjectList}>Add 2 Project</Button>
+			<Button>Add 2 Project</Button>
 		</Card.Content>
-		<Card.Footer>
-			<p>Card Footer</p>
-		</Card.Footer>
+		<Card.Footer></Card.Footer>
 	</Card.Root>
 </div>
