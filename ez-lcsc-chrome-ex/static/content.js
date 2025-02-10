@@ -1,7 +1,3 @@
-function findAddToCartButton() {
-	return document.querySelector('div.mt-5[data-v-8acf6358] button.v-btn.primary[data-v-8acf6358]');
-}
-
 function getCCode() {
 	function findAllCSharps() {
 		// Find all the spans with class 'major2--text'
@@ -16,46 +12,29 @@ function getCCode() {
 		return v.charAt(0) === 'C' && !isNaN(v.slice(1)) && v.slice(1).length > 0;
 	})[0];
 }
-
-// Function to add our custom button next to the Add to Cart button
-function addCustomButton() {
-	const addToCartBtn = findAddToCartButton();
-	if (!addToCartBtn) {
-		console.log('Target button not found, retrying...');
-		setTimeout(addCustomButton, 1000); // Retry after 1 second
-	}
-	// // Create our custom button with similar styling
-	const customButton = document.createElement('button');
-	customButton.textContent = 'Add To Project';
-	customButton.className =
-		'v-btn v-btn--block v-btn--is-elevated v-btn--has-bg theme--light v-size--default secondary mt-5 add-2-project-tag';
-	customButton.style.height = '42px';
-	customButton.style.marginTop = '10px';
-
-	// // Add click listener
-	customButton.addEventListener('click', async () => {
-		// send message to backend (complies with V3)
-		chrome.runtime.sendMessage({ action: 'openPOPUP' }, (response) => {
-			if (response.success) {
-				console.log('Fetched data:', response.data);
+function sendMessage(action, message = undefined) {
+	return new Promise((resolve, reject) => {
+		chrome.runtime.sendMessage({ action: action, data: message }, (response) => {
+			if (response) {
+				resolve(response);
 			} else {
-				console.error('Error fetching data:', response.error);
+				reject(new Error(response?.error || 'Unknown error occurred'));
 			}
 		});
 	});
-
-	// // Insert our button after the Add to Cart button
-	addToCartBtn.parentElement.insertBefore(customButton, addToCartBtn.nextSibling);
 }
 
-// Start the process when the page loads
-document.addEventListener('DOMContentLoaded', addCustomButton);
-
+let ifPending = false;
 // Also run on dynamic page updates (for single-page applications)
-const observer = new MutationObserver(() => {
-	if (!document.querySelector('div.ballerTable')) {
-		console.log('Adding Custom Button');
-		// addCustomButton();
+// TODO, figure out why data isnt being read in properly
+// TODO, finish making the table
+const observer = new MutationObserver(async () => {
+	if (!document.querySelector('div.ballerTable') && !ifPending) {
+		ifPending = true;
+		console.log('Adding Project Table');
+		const projects = await sendMessage('getProjectList');
+		const newProject = await sendMessage('createNewProject');
+		console.log(projects);
 		createProjectTable(
 			getTablePositionElement(),
 			[
@@ -78,7 +57,8 @@ observer.observe(document.body, {
 });
 
 // the goal is now, to add this element to the page somewhere
-
+// TODO make the buttons fire events to the background
+// TODO attach ids to the buttons, and make them talk correctly
 function createProjectTable(targetElement, tableHeaders, tableData) {
 	// Create main container
 	const container = document.createElement('div');
@@ -129,7 +109,7 @@ function createProjectTable(targetElement, tableHeaders, tableData) {
 		// Button column
 		const tdButton = document.createElement('td');
 		const buttonHtml = `
-          <button type="button" class="v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--small primary" style="height:32px;">
+          <button type="button" class="v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--small primary" style="height:32px;" onclick>
               <span class="v-btn__content">
                   <span class="font-Bold-600">Add To Project</span>
               </span>

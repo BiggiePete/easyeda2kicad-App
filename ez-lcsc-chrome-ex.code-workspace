@@ -1,11 +1,14 @@
 {
-	"folders": [
-		{
-			"path": "ez-lcsc-chrome-ex"
-		},
-		{
-			"path": "ez-lcsc-desktop-connector"
-		}
-	],
-	"settings": {}
+  "folders": [
+    {
+      "path": "ez-lcsc-chrome-ex"
+    },
+    {
+      "path": "ez-lcsc-desktop-connector"
+    },
+    {
+      "path": ".git"
+    }
+  ],
+  "settings": {}
 }

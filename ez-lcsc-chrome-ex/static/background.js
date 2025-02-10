@@ -5,43 +5,68 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-	console.log('PING!');
-	if (message.action === 'openPOPUP') {
-		chrome.action.openPopup();
-		// Make the fetch request from the service worker
-		// Keep the message channel open for asynchronous response
-		return true;
-	} else if (message.action === 'sendLCSCCODE') {
-		fetch('http://localhost:3030/api/getLCSC', {
-			method: 'POST',
-			body: JSON.stringify({ C: message.code }),
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			mode: 'cors' // Ensure the request respects CORS
-		})
-			.then((response) => response.text()) // Handle response as text (or JSON if needed)
-			.then((data) => {
-				console.log('Response:', data);
+	switch (message.action) {
+		case 'getHealth':
+			fetch('http://localhost:3030/api/getHealth', {
+				method: 'GET',
+				body: JSON.stringify(),
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				mode: 'cors' // Ensure the request respects CORS
 			})
-			.catch((error) => {
-				console.error('Error:', error);
-			});
-	} else if (message.action === 'getProjectList') {
-		console.log('message Sending');
-		fetch('http://localhost:3030/api/getProjectList', {
-			method: 'GET',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			mode: 'cors' // Ensure the request respects CORS
-		})
-			.then((response) => response.text()) // Handle response as text (or JSON if needed)
-			.then((data) => {
-				console.log('Response:', data);
+				.then((response) => response.json()) // Parse the JSON response
+				.then((data) => {
+					console.log('Response:', data);
+					sendResponse(data);
+				})
+				.catch((error) => {
+					console.error('Error:', error);
+					sendResponse(null);
+				});
+			return true; // Important: keep message channel open
+		case 'getProjectList':
+			fetch('http://localhost:3030/api/getProjectList', {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				mode: 'cors' // Ensure the request respects CORS
 			})
-			.catch((error) => {
-				console.error('Error:', error);
-			});
+				.then((response) => response.json()) // Parse the JSON response
+				.then((data) => {
+					console.log('Response:', data);
+					sendResponse(data);
+				})
+				.catch((error) => {
+					console.error('Error:', error);
+					sendResponse(null);
+				});
+			return true;
+		case 'add2Project':
+			return true; // Important: keep message channel open
+		case 'createNewProject':
+			fetch('http://localhost:3030/api/createNewProject', {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				mode: 'cors' // Ensure the request respects CORS
+			})
+				.then((response) => response.json()) // Parse the JSON response
+				.then((data) => {
+					console.log('Response:', data);
+					sendResponse(data);
+				})
+				.catch((error) => {
+					console.error('Error:', error);
+					sendResponse(null);
+				});
+			return true; // Important: keep message channel open
+		case 'openPOPUP':
+			chrome.action.openPopup();
+			break;
+		default:
+			break;
 	}
 });

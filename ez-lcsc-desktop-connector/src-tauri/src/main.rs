@@ -6,13 +6,16 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use file_picker_utils::select_folder;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
+use sqlite_lib::models::Projects;
 use std::net::SocketAddr;
 use std::process::{Command, Output};
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
-
+mod sqlite_lib;
+use sqlite_lib::{create_project, get_project_by_id, get_projects_from_db};
+mod file_picker_utils;
 // #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 #[derive(Serialize, Deserialize)]
@@ -22,15 +25,20 @@ struct Response {
 
 #[derive(Serialize, Deserialize)]
 struct ProjectResponse {
-    message: Vec<String>,
+    message: Vec<Projects>,
 }
 
 #[derive(Default)]
 struct AppState {}
 
+#[derive(Deserialize)]
+struct CreateProjectRequest {
+    projectName: String,
+}
 // Define the data structure for the incoming POST request
 #[derive(Deserialize)]
-struct PostRequest {
+struct Add2ProjectRequest {
+    id: i32,
     C: String,
 }
 
@@ -39,27 +47,56 @@ async fn get_health(state: axum::extract::State<Arc<AppState>>) -> Json<Response
         message: "Hello from EZ LCSC Handler".to_string(),
     })
 }
+// TODO, finish debugging why this isnt sending state properly to the frontend
 async fn get_project_list(state: axum::extract::State<Arc<AppState>>) -> Json<ProjectResponse> {
     println!("GOT A QUERY");
-    generate_library_files_at_dir("lcsc_code".to_string(), "build_dir".to_string());
-    Json(ProjectResponse {
-        message: ["test".to_string(), "test2".to_string()].to_vec(),
-    })
+    // this should query the database and return all the projects we got
+    let projs = get_projects_from_db();
+    Json(ProjectResponse { message: projs })
+}
+// TODO add this function
+async fn get_create_project(state: axum::extract::State<Arc<AppState>>) -> Json<ProjectResponse> {
+    println!("Creating a Project");
+    let full_path = select_folder()
+        .unwrap()
+        .as_mut_os_string()
+        .to_str()
+        .unwrap()
+        .to_string();
+
+    let folder_name = std::path::Path::new(&full_path)
+        .file_name()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string();
+    create_project(folder_name, full_path);
+    let projs = get_projects_from_db();
+    Json(ProjectResponse { message: projs })
 }
 
-async fn post_item_code(
-    Json(payload): AxumJson<PostRequest>, // Extract the JSON payload from the request
+// TODO. finish this function
+async fn add_2_project(
+    Json(payload): AxumJson<Add2ProjectRequest>, // Extract the JSON payload from the request
 ) -> Json<Response> {
-    println!("Received POST request with CODE: {}", payload.C);
-
+    println!("Received POST request with CODE: {}", &payload.C);
+    match generate_library_files_at_dir(&payload.C, get_project_by_id(payload.id).dir) {
+        Ok(result) => {
+            println!("{}", result.status);
+        }
+        Err(err) => {
+            println!("{}", err);
+        }
+    };
     // You can process the 'url' string here and send back a response
     Json(Response {
         message: format!("Received CODE: {}", payload.C),
     })
 }
 
+// TODO, call the EZLCSC executable and generate the project files at the dir
 fn generate_library_files_at_dir(
-    lcsc_code: String,
+    lcsc_code: &String,
     build_dir: String,
 ) -> Result<Output, std::io::Error> {
     return Command::new("cmd").args(["ls"]).output();
@@ -78,9 +115,10 @@ async fn main() {
 
     // Setup HTTP server
     let app = Router::new()
-        .route("/api/getLCSC", get(get_health))
-        .route("/api/getLCSC", post(post_item_code))
+        .route("/api/getHealth ", get(get_health))
         .route("/api/getProjectList", get(get_project_list))
+        .route("/api/add2Project", post(add_2_project))
+        .route("/api/createNewProject", get(get_create_project))
         .with_state(http_state)
         .layer(cors);
 
