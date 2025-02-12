@@ -39,7 +39,7 @@ struct CreateProjectRequest {
 #[derive(Deserialize)]
 struct Add2ProjectRequest {
     id: i32,
-    C: String,
+    c: String,
 }
 
 async fn get_health(state: axum::extract::State<Arc<AppState>>) -> Json<Response> {
@@ -79,8 +79,8 @@ async fn get_create_project(state: axum::extract::State<Arc<AppState>>) -> Json<
 async fn add_2_project(
     Json(payload): AxumJson<Add2ProjectRequest>, // Extract the JSON payload from the request
 ) -> Json<Response> {
-    println!("Received POST request with CODE: {}", &payload.C);
-    match generate_library_files_at_dir(&payload.C, get_project_by_id(payload.id).dir) {
+    println!("Received POST request with CODE: {}", &payload.c);
+    match generate_library_files_at_dir(&payload.c, get_project_by_id(payload.id).dir) {
         Ok(result) => {
             println!("{}", result.status);
         }
@@ -90,7 +90,7 @@ async fn add_2_project(
     };
     // You can process the 'url' string here and send back a response
     Json(Response {
-        message: format!("Received CODE: {}", payload.C),
+        message: format!("Received CODE: {}", payload.c),
     })
 }
 
@@ -117,7 +117,7 @@ async fn main() {
     let app = Router::new()
         .route("/api/getHealth ", get(get_health))
         .route("/api/getProjectList", get(get_project_list))
-        .route("/api/add2Project", post(add_2_project))
+        .route("/api/addTOProject", post(add_2_project))
         .route("/api/createNewProject", get(get_create_project))
         .with_state(http_state)
         .layer(cors);

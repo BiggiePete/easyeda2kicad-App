@@ -36,7 +36,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 				.then((response) => response.json()) // Parse the JSON response
 				.then((data) => {
 					console.log('Response:', data);
-					sendResponse(data);
+					sendResponse(data.message);
 				})
 				.catch((error) => {
 					console.error('Error:', error);
@@ -44,6 +44,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 				});
 			return true;
 		case 'add2Project':
+			fetch('http://localhost:3030/api/addTOProject', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(message.data),
+				mode: 'cors' // Ensure the request respects CORS
+			})
+				.then((response) => response.json()) // Parse the JSON response
+				.then((data) => {
+					console.log('Response:', data);
+					sendResponse(data.message);
+				})
+				.catch((error) => {
+					console.error('Error:', error);
+					sendResponse(null);
+				});
 			return true; // Important: keep message channel open
 		case 'createNewProject':
 			fetch('http://localhost:3030/api/createNewProject', {

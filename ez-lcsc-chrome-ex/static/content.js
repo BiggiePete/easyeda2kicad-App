@@ -23,6 +23,14 @@ function sendMessage(action, message = undefined) {
 		});
 	});
 }
+// structure
+// [
+// 	{
+// 			"id": 1,
+// 			"title": "testKiCADProject",
+// 			"dir": "F:\\Desktop\\Projects\\testKiCADProject"
+// 	}
+// ]
 
 let ifPending = false;
 // Also run on dynamic page updates (for single-page applications)
@@ -33,20 +41,20 @@ const observer = new MutationObserver(async () => {
 		ifPending = true;
 		console.log('Adding Project Table');
 		const projects = await sendMessage('getProjectList');
-		const newProject = await sendMessage('createNewProject');
+
 		console.log(projects);
 		createProjectTable(
 			getTablePositionElement(),
 			[
-				{ text: 'h1', style: '' },
-				{ text: 'h2', style: '' },
-				{ text: 'h3', style: '' }
+				{ text: 'Title', style: '' },
+				{ text: '', style: '' }
 			],
-			[
-				{ type: '1', description: 'something1' },
-				{ type: '2', description: 'something2' },
-				{ type: '3', description: 'something3' }
-			]
+			projects.map((v) => {
+				return {
+					id: v.id,
+					description: v.title
+				};
+			})
 		);
 	}
 });
@@ -96,11 +104,6 @@ function createProjectTable(targetElement, tableHeaders, tableData) {
 	rows.forEach((rowData, index) => {
 		const tr = document.createElement('tr');
 
-		// Type column
-		const tdType = document.createElement('td');
-		tdType.id = `${rowData.type.toLowerCase()}_id`;
-		tdType.textContent = rowData.type;
-
 		// Description column
 		const tdDesc = document.createElement('td');
 		tdDesc.style = 'line-height: 24px;';
@@ -109,18 +112,17 @@ function createProjectTable(targetElement, tableHeaders, tableData) {
 		// Button column
 		const tdButton = document.createElement('td');
 		const buttonHtml = `
-          <button type="button" class="v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--small primary" style="height:32px;" onclick>
+          <button id="EZLCSC_${rowData.id}" type="button" class="v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--small primary" style="height:32px;">
               <span class="v-btn__content">
                   <span class="font-Bold-600">Add To Project</span>
               </span>
           </button>
       `;
 		tdButton.innerHTML = buttonHtml;
-
-		tr.appendChild(tdType);
 		tr.appendChild(tdDesc);
 		tr.appendChild(tdButton);
 		tbody.appendChild(tr);
+		tdButton.addEventListener('click', () => add2Project(rowData.id));
 	});
 
 	// Assemble the table
@@ -207,6 +209,12 @@ function createProjectTable(targetElement, tableHeaders, tableData) {
 	if (targetElement) {
 		targetElement.appendChild(container);
 	}
+}
+async function add2Project(id) {
+	console.log('GOT ID: ' + id);
+	const cCode = getCCode();
+	const status = await sendMessage('add2Project', { c: cCode, id: id });
+	console.log(status);
 }
 
 function getTablePositionElement() {
