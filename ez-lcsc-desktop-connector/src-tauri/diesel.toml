@@ -6,4 +6,4 @@ file = "src/sqlite_lib/schema.rs"
 custom_type_derives = ["diesel::query_builder::QueryId", "Clone"]
 
 [migrations_directory]
-dir = "C:\\Users\\Dingus\\Desktop\\projects\\EZ_LCSC2KiCAD\\ez-lcsc-desktop-connector\\src-tauri\\migrations"
+dir = "./migrations"
