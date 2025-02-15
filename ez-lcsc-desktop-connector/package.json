@@ -25,7 +25,7 @@
 		"@tailwindcss/typography": "^0.5.14",
 		"@tauri-apps/cli": "^2.2.7",
 		"autoprefixer": "^10.4.20",
-		"bits-ui": "^1.0.0-next.88",
+		"bits-ui": "^1.1.0",
 		"clsx": "^2.1.1",
 		"embla-carousel-svelte": "^8.5.2",
 		"formsnap": "^2.0.0",

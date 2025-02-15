@@ -151,6 +151,43 @@ async fn main() {
 
     tauri::Builder::default()
         .manage(state)
+        .invoke_handler(tauri::generate_handler![
+            get_projects_invoke,
+            delete_project_invoke,
+            add_project_invoke,
+            add_part_by_lcsc_invoke
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[tauri::command]
+fn get_projects_invoke() -> Vec<Project> {
+    return db::get_all_records().unwrap_or(Vec::default());
+}
+#[tauri::command]
+fn delete_project_invoke(id: String) {
+    let _ = db::remove_record_by_id(id);
+}
+#[tauri::command]
+fn add_project_invoke() -> Vec<Project> {
+    let full_path = select_folder()
+        .unwrap()
+        .as_mut_os_string()
+        .to_str()
+        .unwrap()
+        .to_string();
+
+    let folder_name = std::path::Path::new(&full_path)
+        .file_name()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string();
+    let _ = db::add_record_with_details(&folder_name, &full_path);
+    return db::get_all_records().unwrap_or(Vec::default());
+}
+#[tauri::command]
+fn add_part_by_lcsc_invoke(id: String, c: String) {
+    let _err = generate_library_files_at_dir(&c, db::get_record_by_id(id).unwrap().unwrap().dir);
 }
