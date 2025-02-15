@@ -73,8 +73,9 @@ const observer = new MutationObserver(async () => {
 		createProjectTable(
 			wrapperDiv,
 			[
-				{ text: 'Title', style: '' },
-				{ text: '', style: '' }
+				{ text: 'Project Name', style: '' },
+				{ text: 'Add Component to Project', style: '' },
+				{ text: 'Remove Project from list', style: '' }
 			],
 			projects.map((v) => {
 				return {
@@ -133,7 +134,7 @@ function createProjectTable(targetElement, tableHeaders, tableData) {
 
 		// Description column
 		const tdDesc = document.createElement('td');
-		tdDesc.style = 'line-height: 24px;';
+		tdDesc.style = 'line-height: 24px; bold';
 		tdDesc.innerHTML = rowData.description;
 
 		// Button column
@@ -150,8 +151,22 @@ function createProjectTable(targetElement, tableHeaders, tableData) {
 		tdButton.innerHTML = buttonHtml;
 		tr.appendChild(tdDesc);
 		tr.appendChild(tdButton);
+
+		const tdDelButton = document.createElement('td');
+		const DelbuttonHtml = `
+				<div class="flex flex-row-reverse" style="display:flex">
+          <button id="EZLCSC_REMOVE_${rowData.id}" type="button" class="v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--small error" style="height:32px;">
+              <span class="v-btn__content">
+                  <span class="font-Bold-600">Remove Project</span>
+              </span>
+          </button>
+				</div>
+      `;
+		tdDelButton.innerHTML = DelbuttonHtml;
+		tr.appendChild(tdDelButton);
 		tbody.appendChild(tr);
 		tdButton.addEventListener('click', () => add2Project(rowData.id));
+		tdDelButton.addEventListener('click', () => removeProject(rowData.id));
 	});
 
 	// Assemble the table
@@ -239,15 +254,25 @@ function createProjectTable(targetElement, tableHeaders, tableData) {
 		targetElement.appendChild(container);
 	}
 }
+
 async function add2Project(id) {
 	console.log('GOT ID: ' + id);
 	const cCode = getCCode();
 	const status = await sendMessage('add2Project', { c: cCode, id: id });
 	console.log(status);
 }
+
+async function removeProject(id) {
+	console.log('Removing ID: ' + id);
+	const status = await sendMessage('removeProject', { id: id });
+	console.log(status);
+	window.location.reload();
+}
+
 async function createproject() {
 	const status = await sendMessage('createNewProject');
 	console.log(status);
+	window.location.reload();
 }
 
 function getTablePositionElement() {

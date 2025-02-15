@@ -1,4 +1,3 @@
-#![feature(windows_process_extensions_show_window)]
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 use axum::extract::Json as AxumJson;
 use axum::{
@@ -28,10 +27,6 @@ struct ProjectResponse {
 }
 #[derive(Default)]
 struct AppState {}
-#[derive(Deserialize)]
-struct CreateProjectRequest {
-    projectName: String,
-}
 // Define the data structure for the incoming POST request
 #[derive(Deserialize)]
 struct Add2ProjectRequest {
@@ -39,20 +34,25 @@ struct Add2ProjectRequest {
     c: String,
 }
 
-async fn get_health(state: axum::extract::State<Arc<AppState>>) -> Json<Response> {
+#[derive(Deserialize)]
+struct RemoveProjectRequest {
+    id: String,
+}
+
+async fn get_health() -> Json<Response> {
     Json(Response {
         message: "Hello from EZ LCSC Handler".to_string(),
     })
 }
 // TODO, finish debugging why this isnt sending state properly to the frontend
-async fn get_project_list(state: axum::extract::State<Arc<AppState>>) -> Json<ProjectResponse> {
+async fn get_project_list() -> Json<ProjectResponse> {
     println!("GOT A QUERY");
     // this should query the database and return all the projects we got
     let projs = db::get_all_records().unwrap_or(Vec::default());
     Json(ProjectResponse { message: projs })
 }
 // TODO add this function
-async fn get_create_project(state: axum::extract::State<Arc<AppState>>) -> Json<ProjectResponse> {
+async fn get_create_project() -> Json<ProjectResponse> {
     println!("Creating a Project");
     let full_path = select_folder()
         .unwrap()
@@ -81,12 +81,22 @@ async fn add_2_project(
     println!("Received POST request with CODE: {}", &payload.c);
     // now since the C code and the URL are correct, we need to send the build dir and the lCSC code to the generate_library_files command
 
-    let err = generate_library_files_at_dir(
+    let _err = generate_library_files_at_dir(
         &payload.c,
         db::get_record_by_id(payload.id).unwrap().unwrap().dir,
     );
     Json(Response {
         message: format!("YAY"),
+    })
+}
+async fn remove_project(
+    Json(payload): AxumJson<RemoveProjectRequest>, // Extract the JSON payload from the request
+) -> Json<Response> {
+    println!("Removing Project with ID {}", &payload.id);
+    // now since the C code and the URL are correct, we need to send the build dir and the lCSC code to the generate_library_files command
+    let _ = db::remove_record_by_id(payload.id);
+    Json(Response {
+        message: format!("record removed"),
     })
 }
 
@@ -124,6 +134,7 @@ async fn main() {
         .route("/api/getProjectList", get(get_project_list))
         .route("/api/addTOProject", post(add_2_project))
         .route("/api/createNewProject", get(get_create_project))
+        .route("/api/removeProject", post(remove_project))
         .with_state(http_state)
         .layer(cors);
 

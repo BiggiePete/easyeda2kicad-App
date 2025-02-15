@@ -1,10 +1,7 @@
 use std::path::PathBuf;
 use windows::core::*;
-use windows::Win32::Foundation::*;
 use windows::Win32::System::Com::*;
 use windows::Win32::UI::Shell::*;
-use windows::Win32::UI::WindowsAndMessaging::*;
-use windows::Win32::*;
 
 pub fn select_folder() -> Option<PathBuf> {
     unsafe {

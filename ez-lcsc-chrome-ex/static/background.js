@@ -80,6 +80,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 					sendResponse(null);
 				});
 			return true; // Important: keep message channel open
+		case 'removeProject':
+			fetch('http://localhost:3030/api/removeProject', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(message.data),
+				mode: 'cors' // Ensure the request respects CORS
+			})
+				.then((response) => response.json()) // Parse the JSON response
+				.then((data) => {
+					console.log('Response:', data);
+					sendResponse(data.message);
+				})
+				.catch((error) => {
+					console.error('Error:', error);
+					sendResponse(null);
+				});
+			return true; // Important: keep message channel open
 		case 'openPOPUP':
 			chrome.action.openPopup();
 			break;
