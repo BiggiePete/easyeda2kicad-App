@@ -41,10 +41,37 @@ const observer = new MutationObserver(async () => {
 		ifPending = true;
 		console.log('Adding Project Table');
 		const projects = await sendMessage('getProjectList');
-
 		console.log(projects);
+
+		// Create the wrapper div with the specified styles
+		const wrapperDiv = document.createElement('div');
+		wrapperDiv.className = 'rounded white pa-6 mt-5';
+		wrapperDiv.style.borderRadius = '4px';
+		wrapperDiv.style.backgroundColor = 'white';
+		wrapperDiv.style.padding = '24px';
+		wrapperDiv.style.marginTop = '20px';
+
+		// Get the target container
+		const targetContainer = getTablePositionElement();
+
+		// Insert our wrapper as the second child if possible
+		if (targetContainer.childNodes.length > 0) {
+			targetContainer.insertBefore(wrapperDiv, targetContainer.childNodes[1]);
+		} else {
+			targetContainer.appendChild(wrapperDiv);
+		}
+
+		// Add the button to our wrapper div instead of directly to the target
+		appendCreateProjectButton('Add a project', wrapperDiv).addEventListener('click', createproject);
+
+		if (projects.length == 0) {
+			console.log('No Projects!');
+			return;
+		}
+
+		// Create the table in our wrapper div instead of directly in the target
 		createProjectTable(
-			getTablePositionElement(),
+			wrapperDiv,
 			[
 				{ text: 'Title', style: '' },
 				{ text: '', style: '' }
@@ -52,7 +79,7 @@ const observer = new MutationObserver(async () => {
 			projects.map((v) => {
 				return {
 					id: v.id,
-					description: v.title
+					description: v.proj_name
 				};
 			})
 		);
@@ -112,11 +139,13 @@ function createProjectTable(targetElement, tableHeaders, tableData) {
 		// Button column
 		const tdButton = document.createElement('td');
 		const buttonHtml = `
+				<div class="flex flex-row-reverse" style="display:flex">
           <button id="EZLCSC_${rowData.id}" type="button" class="v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--small primary" style="height:32px;">
               <span class="v-btn__content">
                   <span class="font-Bold-600">Add To Project</span>
               </span>
           </button>
+				</div>
       `;
 		tdButton.innerHTML = buttonHtml;
 		tr.appendChild(tdDesc);
@@ -216,9 +245,68 @@ async function add2Project(id) {
 	const status = await sendMessage('add2Project', { c: cCode, id: id });
 	console.log(status);
 }
+async function createproject() {
+	const status = await sendMessage('createNewProject');
+	console.log(status);
+}
 
 function getTablePositionElement() {
 	return document.querySelector(
-		'#app > div.v-application--wrap > main > div > div > div > div > div.ml-lg-5.mt-5.mt-lg-0.detailRightWrap > div.rounded.white.pa-6'
+		'#app > div.v-application--wrap > main > div > div > div > div > div.flex-auto'
 	);
+}
+
+function appendCreateProjectButton(text, targetElement, options = {}) {
+	// Default options
+	const { height = 42, backgroundColor = null } = options;
+
+	// Create button element
+	const button = document.createElement('button');
+
+	// Set attributes
+	button.setAttribute('type', 'button');
+	button.setAttribute(
+		'class',
+		'v-btn v-btn--block v-btn--is-elevated v-btn--has-bg theme--light v-size--default secondary mt-2'
+	);
+	button.setAttribute('EZLCSC2KICAD-CREATEPROJECT', '');
+
+	// Set style
+	button.style.height = `${height}px`;
+	if (backgroundColor) {
+		button.style.backgroundColor = backgroundColor;
+	}
+
+	// Create span elements
+	const contentSpan = document.createElement('span');
+	contentSpan.setAttribute('class', 'v-btn__content');
+
+	const textSpan = document.createElement('span');
+	textSpan.setAttribute('class', 'font-Bold-600');
+	textSpan.setAttribute('data-v-8acf6358', '');
+	textSpan.textContent = text;
+
+	// Build the button structure
+	contentSpan.appendChild(textSpan);
+	button.appendChild(contentSpan);
+
+	// Find target element if string selector was provided
+	let target;
+	if (typeof targetElement === 'string') {
+		target = document.querySelector(targetElement);
+		if (!target) {
+			console.error(`Target element "${targetElement}" not found`);
+			return button; // Return button even if not appended
+		}
+	} else {
+		target = targetElement;
+	}
+
+	// Append the button to the target
+	target.appendChild(button);
+	let span = document.createElement('span');
+	span.textContent = 'If you have just created a project, please refresh the page';
+	target.appendChild(span);
+
+	return button;
 }

@@ -1,20 +1,19 @@
+#![feature(windows_process_extensions_show_window)]
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
-
 use axum::extract::Json as AxumJson;
 use axum::{
     http::Method,
     routing::{get, post},
     Json, Router,
 };
+use db::Project;
 use file_picker_utils::select_folder;
 use serde::{Deserialize, Serialize};
-use sqlite_lib::models::Projects;
 use std::net::SocketAddr;
-use std::process::{Command, Output};
+use std::process::Command;
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
-mod sqlite_lib;
-use sqlite_lib::{create_project, get_project_by_id, get_projects_from_db};
+mod db;
 mod file_picker_utils;
 // #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -25,12 +24,10 @@ struct Response {
 
 #[derive(Serialize, Deserialize)]
 struct ProjectResponse {
-    message: Vec<Projects>,
+    message: Vec<Project>,
 }
-
 #[derive(Default)]
 struct AppState {}
-
 #[derive(Deserialize)]
 struct CreateProjectRequest {
     projectName: String,
@@ -38,7 +35,7 @@ struct CreateProjectRequest {
 // Define the data structure for the incoming POST request
 #[derive(Deserialize)]
 struct Add2ProjectRequest {
-    id: i32,
+    id: String,
     c: String,
 }
 
@@ -51,7 +48,7 @@ async fn get_health(state: axum::extract::State<Arc<AppState>>) -> Json<Response
 async fn get_project_list(state: axum::extract::State<Arc<AppState>>) -> Json<ProjectResponse> {
     println!("GOT A QUERY");
     // this should query the database and return all the projects we got
-    let projs = get_projects_from_db();
+    let projs = db::get_all_records().unwrap_or(Vec::default());
     Json(ProjectResponse { message: projs })
 }
 // TODO add this function
@@ -70,9 +67,11 @@ async fn get_create_project(state: axum::extract::State<Arc<AppState>>) -> Json<
         .to_str()
         .unwrap()
         .to_string();
-    create_project(folder_name, full_path);
-    let projs = get_projects_from_db();
-    Json(ProjectResponse { message: projs })
+    let _ = db::add_record_with_details(&folder_name, &full_path);
+    let projs = db::get_all_records();
+    Json(ProjectResponse {
+        message: projs.unwrap(),
+    })
 }
 
 // TODO. finish this function
@@ -80,26 +79,32 @@ async fn add_2_project(
     Json(payload): AxumJson<Add2ProjectRequest>, // Extract the JSON payload from the request
 ) -> Json<Response> {
     println!("Received POST request with CODE: {}", &payload.c);
-    match generate_library_files_at_dir(&payload.c, get_project_by_id(payload.id).dir) {
-        Ok(result) => {
-            println!("{}", result.status);
-        }
-        Err(err) => {
-            println!("{}", err);
-        }
-    };
-    // You can process the 'url' string here and send back a response
+    // now since the C code and the URL are correct, we need to send the build dir and the lCSC code to the generate_library_files command
+
+    let err = generate_library_files_at_dir(
+        &payload.c,
+        db::get_record_by_id(payload.id).unwrap().unwrap().dir,
+    );
     Json(Response {
-        message: format!("Received CODE: {}", payload.c),
+        message: format!("YAY"),
     })
 }
 
 // TODO, call the EZLCSC executable and generate the project files at the dir
-fn generate_library_files_at_dir(
-    lcsc_code: &String,
-    build_dir: String,
-) -> Result<Output, std::io::Error> {
-    return Command::new("cmd").args(["ls"]).output();
+
+fn generate_library_files_at_dir(lcsc_code: &String, build_dir: String) {
+    println!("Generating project output");
+    let output = Command::new("easyeda2kicad.exe")
+        .arg("--lcsc_id")
+        .arg(lcsc_code)
+        .arg("--full")
+        .arg("--output")
+        .arg(format!("{}/lib", build_dir.replace("\\", "/")))
+        .arg("--overwrite")
+        .output()
+        .expect("command failed to start");
+    println!("status: {}", output.status);
+    println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
 }
 
 #[tokio::main]
