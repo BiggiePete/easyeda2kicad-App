@@ -102,7 +102,10 @@ async fn remove_project(
 
 // TODO, call the EZLCSC executable and generate the project files at the dir
 
-fn generate_library_files_at_dir(lcsc_code: &String, build_dir: String) {
+fn generate_library_files_at_dir(
+    lcsc_code: &String,
+    build_dir: String,
+) -> std::option::Option<i32> {
     println!("Generating project output");
     let output = Command::new("easyeda2kicad.exe")
         .arg("--lcsc_id")
@@ -113,8 +116,8 @@ fn generate_library_files_at_dir(lcsc_code: &String, build_dir: String) {
         .arg("--overwrite")
         .output()
         .expect("command failed to start");
-    println!("status: {}", output.status);
     println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+    return output.status.code();
 }
 
 #[tokio::main]
@@ -155,7 +158,8 @@ async fn main() {
             get_projects_invoke,
             delete_project_invoke,
             add_project_invoke,
-            add_part_by_lcsc_invoke
+            add_part_by_lcsc_invoke,
+            open_build_dir_invoke
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -164,6 +168,10 @@ async fn main() {
 #[tauri::command]
 fn get_projects_invoke() -> Vec<Project> {
     return db::get_all_records().unwrap_or(Vec::default());
+}
+#[tauri::command]
+fn open_build_dir_invoke(dir: String) {
+    let _ = opener::open(dir);
 }
 #[tauri::command]
 fn delete_project_invoke(id: String) {
@@ -188,6 +196,7 @@ fn add_project_invoke() -> Vec<Project> {
     return db::get_all_records().unwrap_or(Vec::default());
 }
 #[tauri::command]
-fn add_part_by_lcsc_invoke(id: String, c: String) {
-    let _err = generate_library_files_at_dir(&c, db::get_record_by_id(id).unwrap().unwrap().dir);
+fn add_part_by_lcsc_invoke(id: String, c: String) -> i32 {
+    let err = generate_library_files_at_dir(&c, db::get_record_by_id(id).unwrap().unwrap().dir);
+    return err.unwrap();
 }

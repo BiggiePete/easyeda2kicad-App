@@ -7,8 +7,12 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Input } from '$lib/components/ui/input';
+	import { Plus, Trash } from 'lucide-svelte';
+	import * as Tooltip from '$lib/components/ui/tooltip';
+	import { toast } from 'svelte-sonner';
 
-	const projects_ = invoke('get_projects_invoke') as Promise<Project[]>;
+	let projects_ = invoke('get_projects_invoke') as Promise<Project[]>;
+	let importer = $state('');
 </script>
 
 <div class="container w-screen">
@@ -29,7 +33,7 @@
 				<Table.Caption>A List of all current & active projects</Table.Caption>
 				<Table.Header>
 					<Table.Row>
-						<Table.Head class="w-[100px]">Project Name</Table.Head>
+						<Table.Head class="text-left">Project Name</Table.Head>
 						<Table.Head class="text-center">Add LCSC</Table.Head>
 						<Table.Head class="text-right">Delete</Table.Head>
 					</Table.Row>
@@ -48,16 +52,53 @@
 					{:then projects}
 						{#each projects as p}
 							<Table.Row>
-								<Table.Cell class="font-medium">{p.proj_name}</Table.Cell>
+								<Table.Cell class="font-medium">
+									<Tooltip.Provider>
+										<Tooltip.Root>
+											<Tooltip.Trigger
+												onclick={() => {
+													invoke('open_build_dir_invoke', { dir: p.dir });
+												}}>{p.proj_name}</Tooltip.Trigger
+											>
+											<Tooltip.Content>
+												Click me to open the folder's build directory
+											</Tooltip.Content>
+										</Tooltip.Root>
+									</Tooltip.Provider>
+								</Table.Cell>
 								<Table.Cell>
-									<div class="grid grid-cols-3 gap-2">
-										<Input class="col-span-2" />
+									<div class="grid grid-cols-4 gap-2">
+										<Input class="col-span-3" bind:value={importer} />
 
-										<Button variant="secondary">Add To Project</Button>
+										<Button
+											variant="secondary"
+											onclick={() => {
+												invoke('add_part_by_lcsc_invoke', { id: p.id, c: importer }).then((v) => {
+													if (v == 0) {
+														toast.success('Part added to ' + p.proj_name, {
+															description: 'LCSC ' + importer + ' Successfully added'
+														});
+														importer = '';
+													} else {
+														toast.error('Part Failed to Add to ' + p.proj_name, {
+															description:
+																'LCSC ' +
+																importer +
+																' Failed to add, check to make sure part has EASYEDA model'
+														});
+													}
+												});
+											}}><Plus />Import</Button
+										>
 									</div>
 								</Table.Cell>
 								<Table.Cell class="text-right">
-									<Button variant="destructive">Delete</Button>
+									<Button
+										variant="destructive"
+										onclick={() => {
+											invoke;
+										}}><Trash />Delete</Button
+									>
 								</Table.Cell>
 							</Table.Row>
 						{/each}
@@ -66,7 +107,7 @@
 			</Table.Root>
 		</Card.Content>
 		<Card.Footer>
-			<p>Card Footer</p>
+			<Button><Plus />Add Project</Button>
 		</Card.Footer>
 	</Card.Root>
 </div>
