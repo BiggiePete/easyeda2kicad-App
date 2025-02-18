@@ -7,15 +7,16 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Input } from '$lib/components/ui/input';
-	import { Plus, Trash, LoaderCircle } from 'lucide-svelte';
+	import { Plus, Trash, LoaderCircle, RefreshCcw } from 'lucide-svelte';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { toast } from 'svelte-sonner';
 	let projects_ = invoke('get_projects_invoke') as Promise<Project[]>;
 	let importer = $state('');
 	let isAddingProject = $state(false);
+	let removingProjectId = $state('');
 </script>
 
-<div class="container w-screen">
+<div class="container m-auto mt-4 w-screen">
 	<Card.Root>
 		<Card.Header>
 			<Card.Title>
@@ -29,6 +30,13 @@
 			<Card.Description>Below you will find a list of all your projects</Card.Description>
 		</Card.Header>
 		<Card.Content>
+			<div class="flex flex-row-reverse">
+				<Button
+					onclick={() => {
+						window.location.reload();
+					}}><RefreshCcw /> Refresh</Button
+				>
+			</div>
 			<Table.Root>
 				<Table.Caption>A List of all current & active projects</Table.Caption>
 				<Table.Header>
@@ -93,12 +101,25 @@
 									</div>
 								</Table.Cell>
 								<Table.Cell class="text-right">
-									<Button
-										variant="destructive"
-										onclick={() => {
-											invoke('removeProject', { id: p.id });
-										}}><Trash />Delete</Button
-									>
+									{#if removingProjectId == p.id}
+										<Button disabled variant="destructive">
+											<LoaderCircle class="animate-spin" />
+											Deleting
+										</Button>
+									{:else}
+										<Button
+											variant="destructive"
+											onclick={() => {
+												removingProjectId = p.id;
+												invoke('delete_project_invoke', { id: p.id }).then((v) => {
+													window.location.reload();
+													setTimeout(() => {
+														removingProjectId = '';
+													}, 5000);
+												});
+											}}><Trash />Delete</Button
+										>
+									{/if}
 								</Table.Cell>
 							</Table.Row>
 						{/each}

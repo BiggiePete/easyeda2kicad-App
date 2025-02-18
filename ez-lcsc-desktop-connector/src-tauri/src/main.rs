@@ -229,6 +229,7 @@ fn open_build_dir_invoke(dir: String) {
 }
 #[tauri::command]
 fn delete_project_invoke(id: String) {
+    println!("removing {}", id);
     let _ = db::remove_record_by_id(id);
 }
 #[tauri::command]
