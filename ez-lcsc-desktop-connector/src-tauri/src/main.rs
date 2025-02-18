@@ -11,9 +11,13 @@ use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use std::process::Command;
 use std::sync::Arc;
+use tauri::{
+    CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
+};
 use tower_http::cors::{Any, CorsLayer};
 mod db;
 mod file_picker_utils;
+use notify_rust::Notification;
 // #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 #[derive(Serialize, Deserialize)]
@@ -80,10 +84,14 @@ async fn add_2_project(
 ) -> Json<Response> {
     println!("Received POST request with CODE: {}", &payload.c);
     // now since the C code and the URL are correct, we need to send the build dir and the lCSC code to the generate_library_files command
-
-    let _err = generate_library_files_at_dir(
-        &payload.c,
-        db::get_record_by_id(payload.id).unwrap().unwrap().dir,
+    let proj = db::get_record_by_id(payload.id).unwrap().unwrap();
+    let _err = generate_library_files_at_dir(&payload.c, &proj.dir);
+    notify_complete(
+        "Part Added To Project".to_string(),
+        format!(
+            "Part: {}\nProject: {}\nLocation: {}",
+            payload.c, proj.proj_name, proj.dir
+        ),
     );
     Json(Response {
         message: format!("YAY"),
@@ -104,7 +112,7 @@ async fn remove_project(
 
 fn generate_library_files_at_dir(
     lcsc_code: &String,
-    build_dir: String,
+    build_dir: &String,
 ) -> std::option::Option<i32> {
     println!("Generating project output");
     let output = Command::new("easyeda2kicad.exe")
@@ -123,37 +131,83 @@ fn generate_library_files_at_dir(
 #[tokio::main]
 async fn main() {
     let state = Arc::new(AppState::default());
-    let http_state = state.clone();
 
-    // Configure CORS
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods([Method::GET, Method::POST])
-        .allow_headers(tower_http::cors::Any);
+    // system tray stuff
 
-    // Setup HTTP server
-    let app = Router::new()
-        .route("/api/getHealth ", get(get_health))
-        .route("/api/getProjectList", get(get_project_list))
-        .route("/api/addTOProject", post(add_2_project))
-        .route("/api/createNewProject", get(get_create_project))
-        .route("/api/removeProject", post(remove_project))
-        .with_state(http_state)
-        .layer(cors);
+    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
+    let hide = CustomMenuItem::new("hide".to_string(), "Hide");
+    let tray_menu = SystemTrayMenu::new()
+        .add_item(quit)
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(hide);
 
-    // Run HTTP server in separate task
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3030));
-    println!("HTTP server running on http://{}", addr);
-
-    tokio::spawn(async move {
-        axum::Server::bind(&addr)
-            .serve(app.into_make_service())
-            .await
-            .unwrap();
-    });
+    let tray = SystemTray::new().with_menu(tray_menu);
 
     tauri::Builder::default()
-        .manage(state)
+        .manage(state.clone())
+        .system_tray(tray)
+        .setup(move |_app| {
+            let http_state = state.clone();
+
+            // Configure CORS
+            let cors = CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods([Method::GET, Method::POST])
+                .allow_headers(tower_http::cors::Any);
+
+            // Setup HTTP server
+            let router = Router::new()
+                .route("/api/getHealth ", get(get_health))
+                .route("/api/getProjectList", get(get_project_list))
+                .route("/api/addTOProject", post(add_2_project))
+                .route("/api/createNewProject", get(get_create_project))
+                .route("/api/removeProject", post(remove_project))
+                .with_state(http_state)
+                .layer(cors);
+            // Get the app handle for potential use in Axum handlers
+
+            // Spawn Axum server in Tauri's runtime
+            tauri::async_runtime::spawn(async move {
+                let addr = SocketAddr::from(([127, 0, 0, 1], 3030));
+                println!("HTTP server running on http://{}", addr);
+
+                axum::Server::bind(&addr)
+                    .serve(router.into_make_service())
+                    .await
+                    .unwrap();
+            });
+
+            Ok(())
+        })
+        .on_system_tray_event(|app, event| match event {
+            SystemTrayEvent::MenuItemClick { id, .. } => {
+                // get a handle to the clicked menu item
+                // note that `tray_handle` can be called anywhere,
+                // just get an `AppHandle` instance with `app.handle()` on the setup hook
+                // and move it to another function or thread
+                let item_handle = app.tray_handle().get_item(&id);
+                match id.as_str() {
+                    "hide" => {
+                        let window = app.get_window("main").unwrap();
+                        if window.is_visible().unwrap() {
+                            window.hide().unwrap();
+                            // you can also `set_selected`, `set_enabled` and `set_native_image` (macOS only).
+                            item_handle.set_title("Show").unwrap();
+                        } else {
+                            window.show().unwrap();
+                            // you can also `set_selected`, `set_enabled` and `set_native_image` (macOS only).
+                            item_handle.set_title("Hide").unwrap();
+                        }
+                    }
+                    "quit" => {
+                        let window = app.get_window("main").unwrap();
+                        window.close().unwrap();
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        })
         .invoke_handler(tauri::generate_handler![
             get_projects_invoke,
             delete_project_invoke,
@@ -197,6 +251,24 @@ fn add_project_invoke() -> Vec<Project> {
 }
 #[tauri::command]
 fn add_part_by_lcsc_invoke(id: String, c: String) -> i32 {
-    let err = generate_library_files_at_dir(&c, db::get_record_by_id(id).unwrap().unwrap().dir);
+    let proj = db::get_record_by_id(id).unwrap().unwrap();
+    let err = generate_library_files_at_dir(&c, &proj.dir);
+
+    notify_complete(
+        "Part Added To Project".to_string(),
+        format!(
+            "Part: {}\nProject: {}\nLocation: {}",
+            c, proj.proj_name, proj.dir
+        ),
+    );
     return err.unwrap();
+}
+
+fn notify_complete(title: String, body: String) {
+    let _notification = Notification::new()
+        .summary(&title)
+        .body(&body)
+        .appname("EZ LCSC2KICAD") // Optional
+        .show()
+        .unwrap();
 }

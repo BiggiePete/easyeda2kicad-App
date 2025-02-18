@@ -7,12 +7,12 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Input } from '$lib/components/ui/input';
-	import { Plus, Trash } from 'lucide-svelte';
+	import { Plus, Trash, LoaderCircle } from 'lucide-svelte';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { toast } from 'svelte-sonner';
-
 	let projects_ = invoke('get_projects_invoke') as Promise<Project[]>;
 	let importer = $state('');
+	let isAddingProject = $state(false);
 </script>
 
 <div class="container w-screen">
@@ -96,7 +96,7 @@
 									<Button
 										variant="destructive"
 										onclick={() => {
-											invoke;
+											invoke('removeProject', { id: p.id });
 										}}><Trash />Delete</Button
 									>
 								</Table.Cell>
@@ -107,7 +107,22 @@
 			</Table.Root>
 		</Card.Content>
 		<Card.Footer>
-			<Button><Plus />Add Project</Button>
+			{#if isAddingProject}
+				<Button disabled>
+					<LoaderCircle class="animate-spin" />
+					Follow Prompts
+				</Button>
+			{:else}
+				<Button
+					onclick={async () => {
+						invoke('add_project_invoke').then((v) => {
+							isAddingProject = false;
+							window.location.reload();
+						});
+						isAddingProject = true;
+					}}><Plus />Add Project</Button
+				>
+			{/if}
 		</Card.Footer>
 	</Card.Root>
 </div>
