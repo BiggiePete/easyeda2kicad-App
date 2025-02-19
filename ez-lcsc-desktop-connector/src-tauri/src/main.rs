@@ -1,4 +1,6 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 use axum::extract::Json as AxumJson;
 use axum::{
     http::Method,
@@ -18,7 +20,6 @@ use tower_http::cors::{Any, CorsLayer};
 mod db;
 mod file_picker_utils;
 use notify_rust::Notification;
-// #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 #[derive(Serialize, Deserialize)]
 struct Response {
