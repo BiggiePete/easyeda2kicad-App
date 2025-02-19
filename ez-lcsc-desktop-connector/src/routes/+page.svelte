@@ -7,11 +7,12 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Input } from '$lib/components/ui/input';
-	import { Plus, Trash, LoaderCircle, RefreshCcw } from 'lucide-svelte';
+	import { Plus, Trash, LoaderCircle, RefreshCw } from 'lucide-svelte';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { toast } from 'svelte-sonner';
 	let projects_ = invoke('get_projects_invoke') as Promise<Project[]>;
 	let importer = $state('');
+	let isImporting = $state(false);
 	let isAddingProject = $state(false);
 	let removingProjectId = $state('');
 </script>
@@ -34,7 +35,7 @@
 				<Button
 					onclick={() => {
 						window.location.reload();
-					}}><RefreshCcw /> Refresh</Button
+					}}><RefreshCw /> Refresh</Button
 				>
 			</div>
 			<Table.Root>
@@ -78,26 +79,35 @@
 									<div class="grid grid-cols-4 gap-2">
 										<Input class="col-span-3" bind:value={importer} />
 
-										<Button
-											variant="secondary"
-											onclick={() => {
-												invoke('add_part_by_lcsc_invoke', { id: p.id, c: importer }).then((v) => {
-													if (v == 0) {
-														toast.success('Part added to ' + p.proj_name, {
-															description: 'LCSC ' + importer + ' Successfully added'
-														});
-														importer = '';
-													} else {
-														toast.error('Part Failed to Add to ' + p.proj_name, {
-															description:
-																'LCSC ' +
-																importer +
-																' Failed to add, check to make sure part has EASYEDA model'
-														});
-													}
-												});
-											}}><Plus />Import</Button
-										>
+										{#if isImporting}
+											<Button disabled variant="secondary">
+												<LoaderCircle class="animate-spin" /> Importing
+											</Button>
+										{:else}
+											<Button
+												variant="secondary"
+												onclick={() => {
+													isImporting = true;
+													invoke('add_part_by_lcsc_invoke', { id: p.id, c: importer }).then((v) => {
+														if (v == 0) {
+															toast.success('Part added to ' + p.proj_name, {
+																description: 'LCSC ' + importer + ' Successfully added'
+															});
+															importer = '';
+															isImporting = false;
+														} else {
+															toast.error('Part Failed to Add to ' + p.proj_name, {
+																description:
+																	'LCSC ' +
+																	importer +
+																	' Failed to add, check to make sure part has EASYEDA model'
+															});
+															isImporting = false;
+														}
+													});
+												}}><Plus />Import</Button
+											>
+										{/if}
 									</div>
 								</Table.Cell>
 								<Table.Cell class="text-right">

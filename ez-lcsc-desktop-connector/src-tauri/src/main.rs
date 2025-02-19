@@ -51,7 +51,7 @@ async fn get_health() -> Json<Response> {
 }
 // TODO, finish debugging why this isnt sending state properly to the frontend
 async fn get_project_list() -> Json<ProjectResponse> {
-    println!("GOT A QUERY");
+    println!("Query for Projects!");
     // this should query the database and return all the projects we got
     let projs = db::get_all_records().unwrap_or(Vec::default());
     Json(ProjectResponse { message: projs })
