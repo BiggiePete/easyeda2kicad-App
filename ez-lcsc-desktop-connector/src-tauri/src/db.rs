@@ -4,7 +4,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
 use uuid::Uuid;
-
+// TODO, fix issue with DB, if the headers do not exist, the db wont be able to be written to properly
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Project {
     pub id: String,
