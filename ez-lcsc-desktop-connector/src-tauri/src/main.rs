@@ -20,6 +20,7 @@ use tower_http::cors::{Any, CorsLayer};
 mod db;
 mod file_picker_utils;
 use notify_rust::Notification;
+use tauri_plugin_autostart::MacosLauncher;
 
 #[derive(Serialize, Deserialize)]
 struct Response {
@@ -147,6 +148,10 @@ async fn main() {
     tauri::Builder::default()
         .manage(state.clone())
         .system_tray(tray)
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            Some(vec![""]), /* arbitrary number of args to pass to your app */
+        ))
         .setup(move |_app| {
             let http_state = state.clone();
 
