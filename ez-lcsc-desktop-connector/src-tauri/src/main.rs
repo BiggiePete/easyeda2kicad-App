@@ -11,6 +11,7 @@ use db::Project;
 use file_picker_utils::select_folder;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
+use std::os::windows::process::CommandExt;
 use std::process::Command;
 use std::sync::Arc;
 use tauri::{
@@ -117,6 +118,7 @@ fn generate_library_files_at_dir(
     build_dir: &String,
 ) -> std::option::Option<i32> {
     println!("Generating project output");
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
     let output = Command::new("easyeda2kicad.exe")
         .arg("--lcsc_id")
         .arg(lcsc_code)
@@ -124,6 +126,7 @@ fn generate_library_files_at_dir(
         .arg("--output")
         .arg(format!("{}/lib", build_dir.replace("\\", "/")))
         .arg("--overwrite")
+        .creation_flags(CREATE_NO_WINDOW)
         .output()
         .expect("command failed to start");
     println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
