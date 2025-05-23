@@ -7,6 +7,6 @@
 
 <Toaster />
 <ModeWatcher></ModeWatcher>
-<div class="h-[30rem] w-96">
+<div class="w-full">
 	{@render children()}
 </div>

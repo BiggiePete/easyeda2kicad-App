@@ -18,7 +18,7 @@
 	let removingProjectId = $state('');
 </script>
 
-<div class="container m-auto mt-4 w-screen">
+<div class="container m-auto mt-4">
 	<Card.Root>
 		<Card.Header>
 			<Card.Title>
