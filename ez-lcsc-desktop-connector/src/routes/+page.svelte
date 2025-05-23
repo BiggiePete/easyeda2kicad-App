@@ -71,9 +71,7 @@
 													invoke('open_build_dir_invoke', { dir: p.dir });
 												}}>{p.proj_name}</Tooltip.Trigger
 											>
-											<Tooltip.Content>
-												Click me to open the folder's build directory
-											</Tooltip.Content>
+											<Tooltip.Content>Click me to open this project's directory</Tooltip.Content>
 										</Tooltip.Root>
 									</Tooltip.Provider>
 								</Table.Cell>
