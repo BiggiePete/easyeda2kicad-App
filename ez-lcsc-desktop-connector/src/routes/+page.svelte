@@ -84,29 +84,40 @@
 												<LoaderCircle class="animate-spin" /> Importing
 											</Button>
 										{:else}
-											<Button
-												variant="secondary"
-												onclick={() => {
-													isImporting = true;
-													invoke('add_part_by_lcsc_invoke', { id: p.id, c: importer }).then((v) => {
-														if (v == 0) {
-															toast.success('Part added to ' + p.proj_name, {
-																description: 'LCSC ' + importer + ' Successfully added'
-															});
-															importer = '';
-															isImporting = false;
-														} else {
-															toast.error('Part Failed to Add to ' + p.proj_name, {
-																description:
-																	'LCSC ' +
-																	importer +
-																	' Failed to add, check to make sure part has EASYEDA model'
-															});
-															isImporting = false;
-														}
-													});
-												}}><Plus />Import</Button
-											>
+											<Tooltip.Provider>
+												<Tooltip.Root>
+													<Tooltip.Trigger>
+														<Button
+															variant="secondary"
+															onclick={() => {
+																isImporting = true;
+																invoke('add_part_by_lcsc_invoke', { id: p.id, c: importer }).then(
+																	(v) => {
+																		if (v == 0) {
+																			toast.success('Part added to ' + p.proj_name, {
+																				description: 'LCSC ' + importer + ' Successfully added'
+																			});
+																			importer = '';
+																			isImporting = false;
+																		} else {
+																			toast.error('Part Failed to Add to ' + p.proj_name, {
+																				description:
+																					'LCSC ' +
+																					importer +
+																					' Failed to add, check to make sure part has EASYEDA model'
+																			});
+																			isImporting = false;
+																		}
+																	}
+																);
+															}}><Plus />Import</Button
+														></Tooltip.Trigger
+													>
+													<Tooltip.Content>
+														Import the item referenced by the preceding C# into this project
+													</Tooltip.Content>
+												</Tooltip.Root>
+											</Tooltip.Provider>
 										{/if}
 									</div>
 								</Table.Cell>
@@ -117,18 +128,28 @@
 											Deleting
 										</Button>
 									{:else}
-										<Button
-											variant="destructive"
-											onclick={() => {
-												removingProjectId = p.id;
-												invoke('delete_project_invoke', { id: p.id }).then((v) => {
-													window.location.reload();
-													setTimeout(() => {
-														removingProjectId = '';
-													}, 5000);
-												});
-											}}><Trash />Delete</Button
-										>
+										<Tooltip.Provider>
+											<Tooltip.Root>
+												<Tooltip.Trigger>
+													<Button
+														variant="destructive"
+														onclick={() => {
+															removingProjectId = p.id;
+															invoke('delete_project_invoke', { id: p.id }).then((v) => {
+																window.location.reload();
+																setTimeout(() => {
+																	removingProjectId = '';
+																}, 5000);
+															});
+														}}><Trash />Delete</Button
+													></Tooltip.Trigger
+												>
+												<Tooltip.Content>
+													Remove project from this project list (this does not delete project
+													files!)
+												</Tooltip.Content>
+											</Tooltip.Root>
+										</Tooltip.Provider>
 									{/if}
 								</Table.Cell>
 							</Table.Row>
