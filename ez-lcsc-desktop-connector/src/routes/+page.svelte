@@ -145,7 +145,7 @@
 													></Tooltip.Trigger
 												>
 												<Tooltip.Content>
-													Remove project from this project list (this does not delete project
+													Remove project from this project list, (this does not delete project
 													files!)
 												</Tooltip.Content>
 											</Tooltip.Root>
