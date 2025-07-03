@@ -39,6 +39,22 @@
 						window.location.reload();
 					}}><RefreshCw /> Refresh</Button
 				>
+				{#if isAddingProject}
+					<Button disabled>
+						<LoaderCircle class="animate-spin" />
+						Follow Prompts
+					</Button>
+				{:else}
+					<Button
+						onclick={async () => {
+							invoke('add_project_invoke').then((v) => {
+								isAddingProject = false;
+								window.location.reload();
+							});
+							isAddingProject = true;
+						}}><Plus />Add Project</Button
+					>
+				{/if}
 			</div>
 			<Table.Root>
 				<Table.Caption>A List of all current & active projects</Table.Caption>

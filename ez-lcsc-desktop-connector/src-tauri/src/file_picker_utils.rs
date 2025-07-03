@@ -25,12 +25,16 @@ pub fn select_folder() -> Option<PathBuf> {
         match file_dialog.Show(None) {
             Ok(_) => {
                 // Get the selected item
-                let result = file_dialog.GetResult().unwrap();
-                let path = result.GetDisplayName(SIGDN_FILESYSPATH).unwrap();
+                match file_dialog.GetResult() {
+                    Ok(result) => {
+                        let path = result.GetDisplayName(SIGDN_FILESYSPATH).unwrap();
 
-                // Convert wide string path to PathBuf
-                let path_str = path.to_string().unwrap();
-                Some(PathBuf::from(path_str))
+                        // Convert wide string path to PathBuf
+                        let path_str = path.to_string().unwrap();
+                        Some(PathBuf::from(path_str))
+                    }
+                    Err(_) => return None, // Handle error if GetResult fails
+                }
             }
             Err(_) => None, // User cancelled or error occurred
         }

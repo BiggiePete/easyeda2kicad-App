@@ -243,12 +243,14 @@ fn delete_project_invoke(id: String) {
 }
 #[tauri::command]
 fn add_project_invoke() -> Vec<Project> {
-    let full_path = select_folder()
-        .unwrap()
-        .as_mut_os_string()
-        .to_str()
-        .unwrap()
-        .to_string();
+    let full_path = select_folder();
+
+    // check to make sure that full_path is not none, then pass it along
+    if full_path.is_none() {
+        println!("No folder selected, returning empty project list.");
+        return Vec::default();
+    }
+    let full_path = full_path.unwrap().as_os_str().to_str().unwrap().to_string();
 
     let folder_name = std::path::Path::new(&full_path)
         .file_name()
