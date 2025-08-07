@@ -264,16 +264,32 @@ fn add_project_invoke() -> Vec<Project> {
 #[tauri::command]
 fn add_part_by_lcsc_invoke(id: String, c: String) -> i32 {
     let proj = db::get_record_by_id(id).unwrap().unwrap();
-    let err = generate_library_files_at_dir(&c, &proj.dir);
-
-    notify_complete(
-        "Part Added To Project".to_string(),
-        format!(
-            "Part: {}\nProject: {}\nLocation: {}",
-            c, proj.proj_name, proj.dir
-        ),
-    );
-    return err.unwrap();
+    let out = generate_library_files_at_dir(&c, &proj.dir);
+    match out {
+        Some(e) => {
+            if e == 0 {
+                notify_complete(
+                    "Part Added To Project".to_string(),
+                    format!(
+                        "Part: {}\nProject: {}\nLocation: {}",
+                        c, proj.proj_name, proj.dir
+                    ),
+                );
+            } else {
+                notify_complete(
+                    "Part Failed".to_string(),
+                    format!(
+                        "Part: {} Failed\nPlease check LCSC or JLC Parts for an EASY EDA footprint, parts without footprints cannot be added!",
+                        c
+                    ),
+                );
+            }
+        }
+        None => {
+            println!("Part not valid, please check LCSC for EASY EDA part footprint")
+        }
+    }
+    return out.unwrap();
 }
 
 fn notify_complete(title: String, body: String) {

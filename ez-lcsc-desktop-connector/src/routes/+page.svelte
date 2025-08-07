@@ -7,7 +7,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Input } from '$lib/components/ui/input';
-	import { Plus, Trash, LoaderCircle, RefreshCw, Settings } from 'lucide-svelte';
+	import { Plus, Trash, LoaderCircle, RefreshCw } from 'lucide-svelte';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { toast } from 'svelte-sonner';
 	import SettingsSheet from '$lib/components/custom/settingsSheet.svelte';
