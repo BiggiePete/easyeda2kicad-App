@@ -1,0 +1,98 @@
+# .gitea/workflows/release.yml
+
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'V*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    container:
+      image: tea.beyondtelemetry.net/bigpete/rust-node:v1
+
+    steps:
+      # Step 1: Check out the repository's code
+      # 'fetch-depth: 0' is CRITICAL. It fetches the entire git history and all tags,
+      # which is necessary to compare the new tag against the previous one.
+      - name: Checkout Code
+        uses: https://github.com/actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install and build chrome ex
+        run: |
+          cd ez-lcsc-chrome-ex
+          npm ci
+          npm run build
+
+      - name: ZIP build dir
+        run: |
+          cd ez-lcsc-chrome-ex
+          zip -r extension.zip ./build
+
+      - name: Install and build tauri app
+        run: |
+          cd ez-lcsc-desktop-connector
+          npm ci
+          npm run tauri build
+
+      - name: ZIP tauri app
+        run: |
+          cd ez-lcsc-desktop-connector/src-tauri/target/release/bundle/msi
+          zip -r ez-lcsc-desktop-connector.zip ./*
+
+
+      # Step 7: Generate release notes from commit history
+      # This step creates a changelog and saves it to an environment variable.
+      - name: Generate Release Notes
+        id: generate_changelog
+        run: |
+          # Get the current tag that triggered the workflow
+          CURRENT_TAG=${{ github.ref_name }}
+          echo "Current tag is $CURRENT_TAG"
+
+          # Find the previous tag by sorting all tags in version order (descending)
+          # and picking the second one in the list.
+          PREVIOUS_TAG=$(git tag --sort=-v:refname | sed -n '2p')
+
+          # Handle the case where this is the very first tag
+          if [[ -z "$PREVIOUS_TAG" ]]; then
+            echo "No previous tag found. Using the first commit as the base."
+            # Use the hash of the very first commit in the repository
+            COMMIT_RANGE=$(git rev-list --max-parents=0 HEAD)
+          else
+            echo "Previous tag is $PREVIOUS_TAG"
+            COMMIT_RANGE="$PREVIOUS_TAG..$CURRENT_TAG"
+          fi
+
+          # Generate a formatted list of commits in the specified range.
+          # The format is a bullet point, the commit subject, and the short hash.
+          CHANGELOG=$(git log --pretty=format:'* %s (%h)' $COMMIT_RANGE)
+
+          # Multi-line strings need special handling to be set as environment variables.
+          # This syntax creates a temporary delimiter (EOF) to capture the entire changelog.
+          echo "RELEASE_CHANGELOG<<EOF" >> $GITHUB_ENV
+          echo "## What's Changed" >> $GITHUB_ENV
+          echo "$CHANGELOG" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+      - name: setup go (for release action)
+        uses: https://github.com/actions/setup-go@v4
+        with:
+          go-version: '>=1.20.1'
+      # Step 8: Create a new Gitea Release and upload the artifacts
+      - name: Create Gitea Release
+        uses: https://github.com/akkuman/gitea-release-action@v1
+        with:
+          # gitea_url: ${{ secrets.GITEA_URL }}
+          token: ${{ secrets.GITEA_TOKEN }}
+          files: |
+            ez-lcsc-chrome-ex/build.zip
+            ez-lcsc-desktop-connector/src-tauri/target/release/bundle/msi/ez-lcsc-desktop-connector.zip
+          release_name: Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          body: ${{ env.RELEASE_CHANGELOG }}
+          draft: false
+          prerelease: false
