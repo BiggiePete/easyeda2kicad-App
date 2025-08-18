@@ -11,7 +11,7 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
     container:
-      image: bigpete/rust-node:v1
+      image: bigPete/rust-node
 
     steps:
       # Step 1: Check out the repository's code
