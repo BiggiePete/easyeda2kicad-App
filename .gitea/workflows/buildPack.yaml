@@ -32,7 +32,7 @@ jobs:
       - name: Install and build chrome ex
         run: |
           cd ez-lcsc-chrome-ex
-          npm ci
+          npm i
           npm run build
 
       - name: ZIP build dir
@@ -43,7 +43,7 @@ jobs:
       - name: Install and build tauri app
         run: |
           cd ez-lcsc-desktop-connector
-          npm ci
+          npm i
           npm run tauri build
 
       - name: ZIP tauri app
