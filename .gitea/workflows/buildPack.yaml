@@ -21,10 +21,12 @@ jobs:
         uses: https://github.com/actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: "Install RUST"
-        uses: https://github.com/actions-rust-lang/setup-rust-toolchain@v1 # Installs the Rust toolchain
-        with:
-          toolchain: stable # You can specify a different toolchain like 'nightly' or a specific version
+      - name: Install Rust toolchain
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+          rustup update --no-self-update ${{ env.RUST_CHANNEL }}
+          rustup component add --toolchain ${{ env.RUST_CHANNEL }} rustfmt rust-src
+          rustup default ${{ env.RUST_CHANNEL }}
 
       - name: Install and build chrome ex
         run: |
