@@ -137,7 +137,7 @@ fn generate_library_files_at_dir(
     let exit_code = output.status.code();
 
     // After generating files, automatically fix any KiCad symbol files
-    let lib_dir = format!("{}/lib", build_dir.replace("\\", "/"));
+    let lib_dir = format!("{}", build_dir.replace("\\", "/"));
     let fixer = KiCadSymbolFixer::new().with_verbose();
 
     match fixer.fix_directory(&lib_dir) {
