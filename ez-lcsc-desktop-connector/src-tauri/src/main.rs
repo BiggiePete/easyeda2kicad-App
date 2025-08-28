@@ -23,6 +23,9 @@ mod file_picker_utils;
 use notify_rust::Notification;
 use tauri_plugin_autostart::MacosLauncher;
 
+use crate::kicad_file_fix::KiCadSymbolFixer;
+mod kicad_file_fix;
+
 #[derive(Serialize, Deserialize)]
 struct Response {
     message: String,
@@ -111,8 +114,6 @@ async fn remove_project(
     })
 }
 
-// TODO, call the EZLCSC executable and generate the project files at the dir
-
 fn generate_library_files_at_dir(
     lcsc_code: &String,
     build_dir: &String,
@@ -129,8 +130,31 @@ fn generate_library_files_at_dir(
         .creation_flags(CREATE_NO_WINDOW)
         .output()
         .expect("command failed to start");
+
     println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-    return output.status.code();
+
+    // Get the exit code
+    let exit_code = output.status.code();
+
+    // After generating files, automatically fix any KiCad symbol files
+    let lib_dir = format!("{}/lib", build_dir.replace("\\", "/"));
+    let fixer = KiCadSymbolFixer::new().with_verbose();
+
+    match fixer.fix_directory(&lib_dir) {
+        Ok((processed, fixed)) => {
+            if processed > 0 {
+                println!(
+                    "KiCad Symbol Fixer: Processed {} files, fixed {} files",
+                    processed, fixed
+                );
+            }
+        }
+        Err(e) => {
+            eprintln!("Error running KiCad symbol fixer: {}", e);
+        }
+    }
+
+    exit_code
 }
 
 #[tokio::main]

@@ -219,14 +219,17 @@ dependencies = [
  "eframe",
  "notify-rust",
  "opener",
+ "regex",
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
  "tauri-plugin-autostart",
+ "thiserror 1.0.69",
  "tokio",
  "tower-http",
  "uuid",
+ "walkdir",
  "windows 0.48.0",
 ]
 
