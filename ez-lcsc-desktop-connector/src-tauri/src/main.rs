@@ -1,5 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+extern crate pretty_env_logger;
+#[macro_use]
+extern crate log;
 
 use axum::extract::Json as AxumJson;
 use axum::{
@@ -8,22 +11,24 @@ use axum::{
     Json, Router,
 };
 use db::Project;
+use easyeda2kicad_rs::import_component;
 use file_picker_utils::select_folder;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use std::os::windows::process::CommandExt;
+use std::path::Path;
 use std::process::Command;
 use std::sync::Arc;
 use tauri::{
     CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
 };
+
 use tower_http::cors::{Any, CorsLayer};
 mod db;
 mod file_picker_utils;
+use crate::kicad_file_fix::KiCadSymbolFixer;
 use notify_rust::Notification;
 use tauri_plugin_autostart::MacosLauncher;
-
-use crate::kicad_file_fix::KiCadSymbolFixer;
 mod kicad_file_fix;
 
 #[derive(Serialize, Deserialize)]
@@ -56,14 +61,14 @@ async fn get_health() -> Json<Response> {
 }
 // TODO, finish debugging why this isnt sending state properly to the frontend
 async fn get_project_list() -> Json<ProjectResponse> {
-    println!("Query for Projects!");
+    info!("Query for Projects!");
     // this should query the database and return all the projects we got
     let projs = db::get_all_records().unwrap_or(Vec::default());
     Json(ProjectResponse { message: projs })
 }
 // TODO add this function
 async fn get_create_project() -> Json<ProjectResponse> {
-    println!("Creating a Project");
+    info!("Creating a Project");
     let full_path = select_folder()
         .unwrap()
         .as_mut_os_string()
@@ -88,17 +93,30 @@ async fn get_create_project() -> Json<ProjectResponse> {
 async fn add_2_project(
     Json(payload): AxumJson<Add2ProjectRequest>, // Extract the JSON payload from the request
 ) -> Json<Response> {
-    println!("Received POST request with CODE: {}", &payload.c);
+    info!("Received POST request with CODE: {}", &payload.c);
     // now since the C code and the URL are correct, we need to send the build dir and the lCSC code to the generate_library_files command
     let proj = db::get_record_by_id(payload.id).unwrap().unwrap();
-    let _err = generate_library_files_at_dir(&payload.c, &proj.dir);
-    notify_complete(
-        "Part Added To Project".to_string(),
-        format!(
-            "Part: {}\nProject: {}\nLocation: {}",
-            payload.c, proj.proj_name, proj.dir
-        ),
-    );
+    let out = generate_lib_files_at_dir(&payload.c, &proj.dir).await;
+    match out {
+        true => {
+            notify_complete(
+                "Part Added To Project".to_string(),
+                format!(
+                    "Part: {}\nProject: {}\nLocation: {}",
+                    payload.c, proj.proj_name, proj.dir
+                ),
+            );
+        }
+        false => {
+            notify_complete(
+                    "Part Failed".to_string(),
+                    format!(
+                        "Part: {} Failed\nPlease check LCSC or JLC Parts for an EASY EDA footprint, parts without footprints cannot be added!",
+                        payload.c
+                    ),
+                );
+        }
+    }
     Json(Response {
         message: format!("YAY"),
     })
@@ -106,7 +124,7 @@ async fn add_2_project(
 async fn remove_project(
     Json(payload): AxumJson<RemoveProjectRequest>, // Extract the JSON payload from the request
 ) -> Json<Response> {
-    println!("Removing Project with ID {}", &payload.id);
+    info!("Removing Project with ID {}", &payload.id);
     // now since the C code and the URL are correct, we need to send the build dir and the lCSC code to the generate_library_files command
     let _ = db::remove_record_by_id(payload.id);
     Json(Response {
@@ -118,7 +136,7 @@ fn generate_library_files_at_dir(
     lcsc_code: &String,
     build_dir: &String,
 ) -> std::option::Option<i32> {
-    println!("Generating project output");
+    info!("Generating project output");
     const CREATE_NO_WINDOW: u32 = 0x08000000;
     let output = Command::new("easyeda2kicad.exe")
         .arg("--lcsc_id")
@@ -131,7 +149,7 @@ fn generate_library_files_at_dir(
         .output()
         .expect("command failed to start");
 
-    println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+    info!("stdout: {}", String::from_utf8_lossy(&output.stdout));
 
     // Get the exit code
     let exit_code = output.status.code();
@@ -143,22 +161,36 @@ fn generate_library_files_at_dir(
     match fixer.fix_directory(&lib_dir) {
         Ok((processed, fixed)) => {
             if processed > 0 {
-                println!(
+                info!(
                     "KiCad Symbol Fixer: Processed {} files, fixed {} files",
                     processed, fixed
                 );
             }
         }
         Err(e) => {
-            eprintln!("Error running KiCad symbol fixer: {}", e);
+            error!("Error running KiCad symbol fixer: {}", e);
         }
     }
 
     exit_code
 }
 
+async fn generate_lib_files_at_dir(lcsc_code: &String, proj_dir: &String) -> bool {
+    info!("Generating project output");
+    match import_component(lcsc_code, Path::new(proj_dir)).await {
+        Ok(_) => {
+            info!("Successfully generated library files");
+            return true;
+        }
+        Err(e) => {
+            error!("Failed to generate library files: {}", e);
+            return false;
+        }
+    }
+}
 #[tokio::main]
 async fn main() {
+    pretty_env_logger::init();
     let state = Arc::new(AppState::default());
 
     // system tray stuff
@@ -202,7 +234,7 @@ async fn main() {
             // Spawn Axum server in Tauri's runtime
             tauri::async_runtime::spawn(async move {
                 let addr = SocketAddr::from(([127, 0, 0, 1], 3030));
-                println!("HTTP server running on http://{}", addr);
+                info!("HTTP server running on http://{}", addr);
 
                 axum::Server::bind(&addr)
                     .serve(router.into_make_service())
@@ -262,7 +294,7 @@ fn open_build_dir_invoke(dir: String) {
 }
 #[tauri::command]
 fn delete_project_invoke(id: String) {
-    println!("removing {}", id);
+    info!("removing {}", id);
     let _ = db::remove_record_by_id(id);
 }
 #[tauri::command]
@@ -271,7 +303,7 @@ fn add_project_invoke() -> Vec<Project> {
 
     // check to make sure that full_path is not none, then pass it along
     if full_path.is_none() {
-        println!("No folder selected, returning empty project list.");
+        info!("No folder selected, returning empty project list.");
         return Vec::default();
     }
     let full_path = full_path.unwrap().as_os_str().to_str().unwrap().to_string();
@@ -286,34 +318,30 @@ fn add_project_invoke() -> Vec<Project> {
     return db::get_all_records().unwrap_or(Vec::default());
 }
 #[tauri::command]
-fn add_part_by_lcsc_invoke(id: String, c: String) -> i32 {
+async fn add_part_by_lcsc_invoke(id: String, c: String) -> bool {
     let proj = db::get_record_by_id(id).unwrap().unwrap();
-    let out = generate_library_files_at_dir(&c, &proj.dir);
+    let out = generate_lib_files_at_dir(&c, &proj.dir).await;
     match out {
-        Some(e) => {
-            if e == 0 {
-                notify_complete(
-                    "Part Added To Project".to_string(),
-                    format!(
-                        "Part: {}\nProject: {}\nLocation: {}",
-                        c, proj.proj_name, proj.dir
-                    ),
-                );
-            } else {
-                notify_complete(
+        true => {
+            notify_complete(
+                "Part Added To Project".to_string(),
+                format!(
+                    "Part: {}\nProject: {}\nLocation: {}",
+                    c, proj.proj_name, proj.dir
+                ),
+            );
+        }
+        false => {
+            notify_complete(
                     "Part Failed".to_string(),
                     format!(
                         "Part: {} Failed\nPlease check LCSC or JLC Parts for an EASY EDA footprint, parts without footprints cannot be added!",
                         c
                     ),
                 );
-            }
-        }
-        None => {
-            println!("Part not valid, please check LCSC for EASY EDA part footprint")
         }
     }
-    return out.unwrap();
+    return out;
 }
 
 fn notify_complete(title: String, body: String) {

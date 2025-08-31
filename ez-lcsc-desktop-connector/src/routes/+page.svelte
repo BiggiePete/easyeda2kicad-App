@@ -109,7 +109,8 @@
 																isImporting = true;
 																invoke('add_part_by_lcsc_invoke', { id: p.id, c: importer }).then(
 																	(v) => {
-																		if (v == 0) {
+																		console.log(v);
+																		if (v) {
 																			toast.success('Part added to ' + p.proj_name, {
 																				description: 'LCSC ' + importer + ' Successfully added'
 																			});
