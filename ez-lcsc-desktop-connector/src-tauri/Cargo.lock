@@ -211,32 +211,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
 
 [[package]]
-name = "app"
-version = "0.1.0"
-dependencies = [
- "axum",
- "csv",
- "easyeda2kicad-rs",
- "eframe",
- "log",
- "notify-rust",
- "opener",
- "pretty_env_logger",
- "regex",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-autostart",
- "thiserror 1.0.69",
- "tokio",
- "tower-http",
- "uuid",
- "walkdir",
- "windows 0.48.0",
-]
-
-[[package]]
 name = "arboard"
 version = "3.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1664,6 +1638,32 @@ checksum = "8be9f3dfaaffdae2972880079a491a1a8bb7cbed0b8dd7a347f668b4150a3b93"
 dependencies = [
  "event-listener",
  "pin-project-lite",
+]
+
+[[package]]
+name = "ezLCSC2KiCad"
+version = "0.1.1"
+dependencies = [
+ "axum",
+ "csv",
+ "easyeda2kicad-rs",
+ "eframe",
+ "log",
+ "notify-rust",
+ "opener",
+ "pretty_env_logger",
+ "regex",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-autostart",
+ "thiserror 1.0.69",
+ "tokio",
+ "tower-http",
+ "uuid",
+ "walkdir",
+ "windows 0.48.0",
 ]
 
 [[package]]

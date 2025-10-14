@@ -1,11 +1,11 @@
 [package]
-name = "app"
-version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+name = "ezLCSC2KiCad"
+version = "0.1.1"
+description = "An application to help you download parts from LCSC and convert them to KiCad format."
+authors = ["biggiePete"]
 license = ""
 repository = ""
-default-run = "app"
+default-run = "ezLCSC2KiCad"
 edition = "2021"
 rust-version = "1.60"
 
