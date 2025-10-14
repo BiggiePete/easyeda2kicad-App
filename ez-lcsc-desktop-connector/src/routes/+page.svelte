@@ -33,12 +33,13 @@
 			<Card.Description>Below you will find a list of all your projects</Card.Description>
 		</Card.Header>
 		<Card.Content>
-			<div class="flex flex-row-reverse">
+			<div class="flex flex-row-reverse gap-4">
 				<Button
 					onclick={() => {
 						window.location.reload();
 					}}><RefreshCw /> Refresh</Button
 				>
+
 				{#if isAddingProject}
 					<Button disabled>
 						<LoaderCircle class="animate-spin" />
