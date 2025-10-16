@@ -1,0 +1,84 @@
+name: Release Build (Windows)
+
+on:
+  push:
+    tags:
+      - "V*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release-build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Build Chrome extension (ez-lcsc-chrome-ex)
+        working-directory: ez-lcsc-chrome-ex
+        run: |
+          npm ci
+          npm run build
+
+      - name: Zip Chrome extension
+        run: |
+          powershell -Command "if (Test-Path chrome-extension.zip) { Remove-Item chrome-extension.zip -Force }; Compress-Archive -Path 'ez-lcsc-chrome-ex/build/*' -DestinationPath 'chrome-extension.zip' -Force"
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Build Desktop connector (Windows)
+        working-directory: ez-lcsc-desktop-connector
+        run: |
+          npm ci
+          npm run tauri build
+
+      - name: Locate and copy MSI to repo root
+        shell: powershell
+        run: |
+          $msi = Get-ChildItem -Path "ez-lcsc-desktop-connector\src-tauri\target\release\bundle\msi\*.msi" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $msi) { Write-Error "MSI not found"; exit 1 }
+          Copy-Item $msi.FullName -Destination "./ez-lcsc-desktop-connector.msi" -Force
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          body: Automated release from CI
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Chrome extension asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./chrome-extension.zip
+          asset_name: chrome-extension.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload MSI asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./ez-lcsc-desktop-connector.msi
+          asset_name: ez-lcsc-desktop-connector.msi
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
