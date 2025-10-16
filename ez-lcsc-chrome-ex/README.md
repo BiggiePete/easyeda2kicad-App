@@ -8,31 +8,34 @@ If you're seeing this, you've probably already done this step. Congrats!
 
 ```bash
 # create a new project in the current directory
-npx sv create
+# ez-lcsc-chrome-ex
 
-# create a new project in my-app
-npx sv create my-app
+This folder contains the Svelte-based Chrome extension that integrates with LCSC pages.
+
+Quick commands
+
+Install dependencies:
+
+```bash
+cd ez-lcsc-chrome-ex
+npm ci
 ```
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Run in development (hot reload):
 
 ```bash
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
-
-To create a production version of your app:
+Build production bundle:
 
 ```bash
 npm run build
 ```
 
-You can preview the production build with `npm run preview`.
+The production build output is written to `build/`. The release workflows will zip this folder and attach it to the GitHub Release.
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+Notes
+
+- If you use `pnpm` or `yarn`, replace `npm ci` with the appropriate install command.
+- The extension manifest and Svelte routing are in this folder; edit source files under `src/`.
