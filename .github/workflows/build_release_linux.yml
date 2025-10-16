@@ -53,17 +53,42 @@ jobs:
           if [ -z "$INST" ]; then echo "No installer found"; exit 1; fi
           echo "installer=$INST" >> $GITHUB_OUTPUT
 
-      - name: Create Release
+      - name: Get or create release (bash)
         id: create_release
-        uses: actions/create-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
-          body: Automated release from CI
-          draft: false
-          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          repo="${{ github.repository }}"
+          tag="${{ github.ref_name }}"
+          auth_header="Authorization: token $GITHUB_TOKEN"
+
+          # Try to get existing release by tag
+          resp=$(curl -sSL -H "$auth_header" "https://api.github.com/repos/$repo/releases/tags/$tag" || true)
+          upload_url=$(echo "$resp" | jq -r .upload_url // empty)
+
+          if [ -z "$upload_url" ]; then
+            # create release
+            body=$(jq -n --arg tag "$tag" --arg name "Release $tag" '{tag_name:$tag, name:$name, body:"Automated release from CI", draft:false, prerelease:false}')
+            resp=$(curl -sSL -H "$auth_header" -H "Content-Type: application/json" -d "$body" "https://api.github.com/repos/$repo/releases")
+            upload_url=$(echo "$resp" | jq -r .upload_url)
+          fi
+
+          if [ -z "$upload_url" ]; then echo "Failed to get or create release"; exit 1; fi
+          release_id=$(echo "$resp" | jq -r .id)
+          echo "upload_url=$upload_url" >> $GITHUB_OUTPUT
+          echo "release_id=$release_id" >> $GITHUB_OUTPUT
+
+      - name: Remove existing chrome-extension.zip if present
+        run: |
+          set -e
+          repo="${{ github.repository }}"
+          release_id="${{ steps.create_release.outputs.release_id }}"
+          name="chrome-extension.zip"
+          if [ -z "$release_id" ]; then echo "No release id available"; exit 0; fi
+          assets=$(curl -sSL -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$repo/releases/$release_id/assets")
+          asset_id=$(echo "$assets" | jq -r --arg name "$name" '.[] | select(.name==$name) | .id' | head -n1)
+          if [ -n "$asset_id" ]; then curl -sSL -X DELETE -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$repo/releases/assets/$asset_id"; fi
 
       - name: Upload Chrome extension asset
         uses: actions/upload-release-asset@v1

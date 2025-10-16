@@ -51,17 +51,42 @@ jobs:
           if (-not $msi) { Write-Error "MSI not found"; exit 1 }
           Copy-Item $msi.FullName -Destination "./ez-lcsc-desktop-connector.msi" -Force
 
-      - name: Create Release
+      - name: Get or create release (PowerShell)
         id: create_release
-        uses: actions/create-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
-          body: Automated release from CI
-          draft: false
-          prerelease: false
+        shell: powershell
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $repo = "${{ github.repository }}"
+          $tag = "${{ github.ref_name }}"
+          $headers = @{ Authorization = "token $env:GITHUB_TOKEN"; Accept = 'application/vnd.github+json' }
+
+          # Try to get existing release by tag
+          try {
+            $resp = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/tags/$tag" -Headers $headers -Method Get -ErrorAction Stop
+            $uploadUrl = $resp.upload_url
+          } catch {
+            # Not found -> create
+            $body = @{ tag_name = $tag; name = "Release $tag"; body = "Automated release from CI"; draft = $false; prerelease = $false } | ConvertTo-Json
+            $resp = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases" -Headers $headers -Method Post -Body $body -ContentType 'application/json'
+            $uploadUrl = $resp.upload_url
+          }
+
+          if (-not $uploadUrl) { Write-Error "Failed to get or create release"; exit 1 }
+          $releaseId = $resp.id
+          Write-Output "upload_url=$uploadUrl" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          Write-Output "release_id=$releaseId" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Remove existing chrome-extension.zip if present
+        shell: powershell
+        run: |
+          $repo = "${{ github.repository }}"
+          $releaseId = "${{ steps.create_release.outputs.release_id }}"
+          $name = 'chrome-extension.zip'
+          if (-not $releaseId) { Write-Output "No release id available"; exit 0 }
+          $headers = @{ Authorization = "token $env:GITHUB_TOKEN"; Accept = 'application/vnd.github+json' }
+          $assets = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/$releaseId/assets" -Headers $headers -Method Get
+          foreach ($a in $assets) { if ($a.name -eq $name) { Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/assets/$($a.id)" -Headers $headers -Method Delete -ErrorAction SilentlyContinue } }
 
       - name: Upload Chrome extension asset
         uses: actions/upload-release-asset@v1
@@ -72,6 +97,19 @@ jobs:
           asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Remove existing MSI if present
+        shell: powershell
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $repo = "${{ github.repository }}"
+          $releaseId = "${{ steps.create_release.outputs.release_id }}"
+          $name = 'ez-lcsc-desktop-connector.msi'
+          if (-not $releaseId) { Write-Output "No release id available"; exit 0 }
+          $headers = @{ Authorization = "token $env:GITHUB_TOKEN"; Accept = 'application/vnd.github+json' }
+          $assets = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/$releaseId/assets" -Headers $headers -Method Get
+          foreach ($a in $assets) { if ($a.name -eq $name) { Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/assets/$($a.id)" -Headers $headers -Method Delete -ErrorAction SilentlyContinue } }
 
       - name: Upload MSI asset
         uses: actions/upload-release-asset@v1
