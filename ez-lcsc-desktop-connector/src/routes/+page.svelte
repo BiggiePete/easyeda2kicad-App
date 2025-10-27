@@ -63,7 +63,7 @@
 					<Table.Row>
 						<Table.Head class="text-left">Project Name</Table.Head>
 						<Table.Head class="text-center">Add LCSC</Table.Head>
-						<Table.Head class="text-right">Delete</Table.Head>
+						<Table.Head class="text-right">Options</Table.Head>
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
