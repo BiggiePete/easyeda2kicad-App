@@ -1360,9 +1360,9 @@ checksum = "1c7a8fb8a9fbf66c1f703fe16184d10ca0ee9d23be5b4436400408ba54a95005"
 
 [[package]]
 name = "easyeda2kicad-rs"
-version = "0.0.4"
+version = "0.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68ac9738672931082735c06e8e568ba18a06143375c3ffc969555c599d5f095c"
+checksum = "1cab8446cd50e5fe6449bf8ce5598a39dd06234f469b695be0cfb599257038b3"
 dependencies = [
  "bytes",
  "glam",

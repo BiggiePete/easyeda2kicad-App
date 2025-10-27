@@ -36,7 +36,7 @@ tauri-plugin-autostart = { git = "https://github.com/tauri-apps/plugins-workspac
 regex = "1.0"
 walkdir = "2.0"
 thiserror = "1.0"
-easyeda2kicad-rs = "0.0.4"
+easyeda2kicad-rs = "0.0.5"
 log = "0.4"
 pretty_env_logger = "0.4"
 

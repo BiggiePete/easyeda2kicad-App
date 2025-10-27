@@ -7,7 +7,7 @@
   },
   "package": {
     "productName": "ez-lcsc-desktop-connector",
-    "version": "0.1.3"
+    "version": "0.1.4"
   },
   "tauri": {
     "allowlist": {
@@ -68,7 +68,9 @@
         "height": 600,
         "resizable": true,
         "title": "EZ LCSC Desktop Connector",
-        "width": 800
+        "width": 800,
+        "minWidth": 380,
+        "minHeight": 30
       }
     ]
   }
