@@ -11,11 +11,16 @@
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { toast } from 'svelte-sonner';
 	import SettingsSheet from '$lib/components/custom/settingsSheet.svelte';
+	import * as AlertDialog from '$lib/components/ui/alert-dialog';
+	import * as projectNames from '$lib/projectNames.json';
 	let projects_ = invoke('get_projects_invoke') as Promise<Project[]>;
 	let importer = $state('');
 	let isImporting = $state(false);
 	let isAddingProject = $state(false);
 	let removingProjectId = $state('');
+
+	let newProjectName = $state('');
+	let editDialogueOpen = $state(false);
 </script>
 
 <div class="container m-auto mt-4">
@@ -93,8 +98,57 @@
 									</Tooltip.Provider>
 								</Table.Cell>
 								<Table.Cell>
-									<div class="grid grid-cols-4 gap-2">
+									<div class="grid grid-cols-5 gap-2">
 										<Input class="col-span-3" bind:value={importer} />
+										<!-- Edit Project name -->
+										<Tooltip.Provider>
+											<Tooltip.Root>
+												<Tooltip.Trigger>
+													<AlertDialog.Root bind:open={editDialogueOpen}>
+														<AlertDialog.Trigger>
+															<Button>Edit</Button>
+														</AlertDialog.Trigger>
+														<AlertDialog.Content>
+															<AlertDialog.Header>
+																<AlertDialog.Title>What would you like it to be?</AlertDialog.Title>
+																<AlertDialog.Description>
+																	This will change the name of the project inside of this
+																	application. This name will also be visible on the LCSC page.
+
+																	<Input
+																		placeholder={projectNames.name.at(
+																			Math.round(Math.random() * (projectNames.name.length - 1))
+																		)}
+																		bind:value={newProjectName}
+																	/>
+																</AlertDialog.Description>
+															</AlertDialog.Header>
+															<AlertDialog.Footer>
+																<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+																<AlertDialog.Action
+																	onclick={() => {
+																		console.log('Editing the project', {
+																			original: p.proj_name,
+																			new: newProjectName
+																		});
+																		invoke('edit_project_invoke', {
+																			original: p.proj_name,
+																			new: newProjectName
+																		});
+																		newProjectName = '';
+																		editDialogueOpen = false;
+																		window.location.reload();
+																	}}>Continue</AlertDialog.Action
+																>
+															</AlertDialog.Footer>
+														</AlertDialog.Content>
+													</AlertDialog.Root>
+												</Tooltip.Trigger>
+												<Tooltip.Content>
+													<p>Edit project name (only changes project name in-app)</p>
+												</Tooltip.Content>
+											</Tooltip.Root>
+										</Tooltip.Provider>
 
 										{#if isImporting}
 											<Button disabled variant="secondary">

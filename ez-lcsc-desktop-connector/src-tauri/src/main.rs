@@ -278,10 +278,15 @@ async fn main() {
             delete_project_invoke,
             add_project_invoke,
             add_part_by_lcsc_invoke,
-            open_build_dir_invoke
+            open_build_dir_invoke,
+            edit_project_invoke
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+#[tauri::command]
+fn edit_project_invoke(original: String, new: String) -> Project {
+    return db::edit_record(&original, &new).expect("Project not found!");
 }
 
 #[tauri::command]

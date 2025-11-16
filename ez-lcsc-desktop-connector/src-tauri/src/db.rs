@@ -4,7 +4,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
 use uuid::Uuid;
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Project {
     pub id: String,
     pub proj_name: String,
@@ -30,6 +30,43 @@ fn is_file_empty() -> bool {
         }
         Err(_) => true, // File doesn't exist, consider it "empty"
     }
+}
+
+pub fn edit_record(proj_name: &str, new_project_name: &str) -> Result<Project, Box<dyn Error>> {
+    let mut records = get_all_records()?;
+    let mut found = false;
+    let mut edited_project = None;
+
+    // Check if new project name already exists
+    if project_name_exists(new_project_name)? {
+        return Err(format!("Project with name '{}' already exists", new_project_name).into());
+    }
+
+    for project in records.iter_mut() {
+        if project.proj_name == proj_name {
+            project.proj_name = new_project_name.to_string();
+            found = true;
+            edited_project = Some(project.clone());
+            break;
+        }
+    }
+
+    if !found {
+        return Err(format!("Project with name '{}' not found", proj_name).into());
+    }
+
+    // Write all records back to the file
+    let file = OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open(FILE_PATH)?;
+    let mut wtr = csv::Writer::from_writer(BufWriter::new(file));
+    for record in records {
+        wtr.serialize(record)?;
+    }
+    wtr.flush()?;
+
+    Ok(edited_project.unwrap())
 }
 
 pub fn add_record(record: &Project) -> Result<(), Box<dyn Error>> {
