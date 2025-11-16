@@ -1,32 +1,48 @@
-# ez-lcsc-desktop-connector
+# EZ LCSC Desktop Connector
 
-The desktop connector is a Svelte + Tauri application that:
+EZ LCSC Desktop Connector is a tool designed to streamline the process of integrating LCSC electronic component data into KiCAD projects. It provides a user-friendly desktop interface for searching, selecting, and exporting component information directly from LCSC to KiCAD-compatible formats.
 
-- Lets you import part and project files into the local workspace.
-- Runs a small background server used by the Chrome extension to communicate with the desktop app.
+## Features
 
-Quick start
+- Search LCSC's component database
+- View detailed component specifications
+- Export selected components to KiCAD libraries
+- Simple and intuitive desktop UI
 
-Install dependencies and run in development mode:
+## Installation
 
-```bash
-cd ez-lcsc-desktop-connector
-npm i
-npm run tauri dev
-```
+1. Clone this repository:
 
-Build release artifacts (MSI for Windows, .deb/.AppImage for Linux):
+  ```bash
+  git clone https://github.com/BiggiePete/easyeda2kicad-App
+  ```
 
-```bash
-npm i
-npm run tauri build
-```
+2. Install dependencies:
 
-Output
+  ```bash
+  npm install
+  ```
 
-- Release artifacts are placed under `src-tauri/target/release/bundle/`.
-- The CI workflows locate these artifacts and attach them to the GitHub Release when you push a tag matching `V*`.
+3. Run the application:
 
-Notes
+  ```bash
+  npm run tauri dev
+  ```
 
-- The desktop app also starts a local background server process that the Chrome extension can call to hand-off data or trigger imports. Keep the desktop app running if you want the extension to be able to import directly.
+Finalized builds are availiable in the releases section
+
+## Usage
+
+1. Launch the application.
+2. Search for components using LCSC part numbers or keywords.
+3. Select desired components and export them to your KiCAD project.
+
+## Contributing
+
+Contributions are welcome! Please open issues or submit pull requests for improvements and bug fixes.
+
+## TODO
+
+- Add support for batch importing components
+- New Docs
+- New UI (simplify 3 button layout on the right)
