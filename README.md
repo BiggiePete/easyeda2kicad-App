@@ -18,7 +18,7 @@ Quick start
 1. Clone the repository:
 
 ```powershell
-git clone <repo-url>
+git clone https://github.com/BiggiePete/easyeda2kicad-App.git
 cd EZ_LCSC2KiCAD
 ```
 
