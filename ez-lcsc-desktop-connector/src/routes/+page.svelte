@@ -7,7 +7,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Input } from '$lib/components/ui/input';
-	import { Plus, Trash, LoaderCircle, RefreshCw } from 'lucide-svelte';
+	import { Plus, Trash, LoaderCircle, RefreshCw, Pencil } from 'lucide-svelte';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { toast } from 'svelte-sonner';
 	import SettingsSheet from '$lib/components/custom/settingsSheet.svelte';
@@ -100,55 +100,6 @@
 								<Table.Cell>
 									<div class="grid grid-cols-5 gap-2">
 										<Input class="col-span-3" bind:value={importer} />
-										<!-- Edit Project name -->
-										<Tooltip.Provider>
-											<Tooltip.Root>
-												<Tooltip.Trigger>
-													<AlertDialog.Root bind:open={editDialogueOpen}>
-														<AlertDialog.Trigger>
-															<Button>Edit</Button>
-														</AlertDialog.Trigger>
-														<AlertDialog.Content>
-															<AlertDialog.Header>
-																<AlertDialog.Title>What would you like it to be?</AlertDialog.Title>
-																<AlertDialog.Description>
-																	This will change the name of the project inside of this
-																	application. This name will also be visible on the LCSC page.
-
-																	<Input
-																		placeholder={projectNames.name.at(
-																			Math.round(Math.random() * (projectNames.name.length - 1))
-																		)}
-																		bind:value={newProjectName}
-																	/>
-																</AlertDialog.Description>
-															</AlertDialog.Header>
-															<AlertDialog.Footer>
-																<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-																<AlertDialog.Action
-																	onclick={() => {
-																		console.log('Editing the project', {
-																			original: p.proj_name,
-																			new: newProjectName
-																		});
-																		invoke('edit_project_invoke', {
-																			original: p.proj_name,
-																			new: newProjectName
-																		});
-																		newProjectName = '';
-																		editDialogueOpen = false;
-																		window.location.reload();
-																	}}>Continue</AlertDialog.Action
-																>
-															</AlertDialog.Footer>
-														</AlertDialog.Content>
-													</AlertDialog.Root>
-												</Tooltip.Trigger>
-												<Tooltip.Content>
-													<p>Edit project name (only changes project name in-app)</p>
-												</Tooltip.Content>
-											</Tooltip.Root>
-										</Tooltip.Provider>
 
 										{#if isImporting}
 											<Button disabled variant="secondary">
@@ -193,7 +144,57 @@
 										{/if}
 									</div>
 								</Table.Cell>
-								<Table.Cell class="text-right">
+								<Table.Cell class="flex gap-2 text-right">
+									<!-- Edit Project name -->
+									<Tooltip.Provider>
+										<Tooltip.Root>
+											<Tooltip.Trigger>
+												<AlertDialog.Root bind:open={editDialogueOpen}>
+													<AlertDialog.Trigger>
+														<Button><Pencil /> Edit</Button>
+													</AlertDialog.Trigger>
+													<AlertDialog.Content>
+														<AlertDialog.Header>
+															<AlertDialog.Title>What would you like it to be?</AlertDialog.Title>
+															<AlertDialog.Description>
+																This will change the name of the project inside of this application.
+																This name will also be visible on the LCSC page.
+
+																<Input
+																	placeholder={projectNames.name.at(
+																		Math.round(Math.random() * (projectNames.name.length - 1))
+																	)}
+																	bind:value={newProjectName}
+																/>
+															</AlertDialog.Description>
+														</AlertDialog.Header>
+														<AlertDialog.Footer>
+															<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+															<AlertDialog.Action
+																onclick={() => {
+																	console.log('Editing the project', {
+																		original: p.proj_name,
+																		new: newProjectName
+																	});
+																	invoke('edit_project_invoke', {
+																		original: p.proj_name,
+																		new: newProjectName
+																	});
+																	newProjectName = '';
+																	editDialogueOpen = false;
+																	window.location.reload();
+																}}>Continue</AlertDialog.Action
+															>
+														</AlertDialog.Footer>
+													</AlertDialog.Content>
+												</AlertDialog.Root>
+											</Tooltip.Trigger>
+											<Tooltip.Content>
+												<p>Edit project name (only changes project name in-app)</p>
+											</Tooltip.Content>
+										</Tooltip.Root>
+									</Tooltip.Provider>
+
 									{#if removingProjectId == p.id}
 										<Button disabled variant="destructive">
 											<LoaderCircle class="animate-spin" />
