@@ -36,13 +36,3 @@ cd ..\ez-lcsc-desktop-connector
 npm i
 npm run tauri build
 ```
-
-Releases
-
-- Pushing a git tag matching `V*` (for example `V1.0.0`) triggers CI workflows that will build the extension and the desktop connector and attach artifacts (chrome .zip, Windows .msi, Linux installer) to a GitHub Release.
-
-Notes
-
-- Tauri builds may require additional native libraries on the build runners (especially on Linux). If you see build failures in CI, add the required native packages to the workflow before running `npm run tauri build`.
-
-If you'd like a shorter walkthrough or screenshots for installation, tell me what you'd prefer and I can add them.
