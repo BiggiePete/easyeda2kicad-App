@@ -102,9 +102,11 @@
 										<Input class="col-span-3" bind:value={importer} />
 
 										{#if isImporting}
-											<Button disabled variant="secondary">
-												<LoaderCircle class="animate-spin" /> Importing
-											</Button>
+											<div>
+												<Button disabled variant="secondary">
+													<LoaderCircle class="animate-spin" /> Importing
+												</Button>
+											</div>
 										{:else}
 											<Tooltip.Provider>
 												<Tooltip.Root>
