@@ -1,6 +1,6 @@
 [package]
 name = "ezLCSC2KiCad"
-version = "0.1.9"
+version = "0.1.10"
 description = "An application to help you download parts from LCSC and convert them to KiCad format."
 authors = ["biggiePete"]
 license = ""
