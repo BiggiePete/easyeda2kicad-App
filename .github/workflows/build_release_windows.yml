@@ -42,7 +42,7 @@ jobs:
         working-directory: ez-lcsc-desktop-connector
         run: |
           npm ci
-          cargo install tauri-cli
+          cargo install tauri-cli --version 1.6.5
           npm run tauri build
 
       - name: Locate and copy MSI to repo root
