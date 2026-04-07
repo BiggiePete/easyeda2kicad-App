@@ -43,6 +43,7 @@ jobs:
         working-directory: ez-lcsc-desktop-connector
         run: |
           npm ci
+          cargo install tauri-cli
           npm run tauri build
 
       - name: Locate Linux installer
